@@ -162,6 +162,8 @@
 #define S5P_EINT_BASE1		(S5P_IRQ_EINT_BASE + 0)
 #define S5P_EINT_BASE2		(S5P_IRQ_EINT_BASE + 16)
 
+#define IRQ_TS			(S5P_IRQ_EINT_BASE + 25)
+
 /* optional GPIO interrupts */
 #define S5P_GPIOINT_BASE	(S5P_IRQ_EINT_BASE + 32)
 #define IRQ_GPIO1_NR_GROUPS	16
