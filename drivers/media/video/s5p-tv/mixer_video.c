@@ -13,6 +13,7 @@
 
 #include "mixer.h"
 
+#include <linux/module.h>
 #include <media/v4l2-ioctl.h>
 #include <linux/videodev2.h>
 #include <linux/mm.h>
