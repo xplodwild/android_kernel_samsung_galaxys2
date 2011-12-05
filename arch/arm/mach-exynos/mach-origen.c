@@ -130,7 +130,7 @@ static struct regulator_consumer_supply __initdata buck3_consumer[] = {
 	REGULATOR_SUPPLY("vdd_g3d", "mali_drm"), /* G3D */
 };
 static struct regulator_consumer_supply __initdata buck7_consumer[] = {
-	REGULATOR_SUPPLY("vcc", "platform-lcd"), /* LCD */
+	REGULATOR_SUPPLY("vcc_lcd", "platform-lcd.0"), /* LCD */
 };
 
 static struct regulator_init_data __initdata max8997_ldo1_data = {
@@ -383,11 +383,11 @@ static struct regulator_init_data __initdata max8997_buck5_data = {
 static struct regulator_init_data __initdata max8997_buck7_data = {
 	.constraints	= {
 		.name		= "VDD_LCD_3.3V",
-		.min_uV		= 3300000,
-		.max_uV		= 3300000,
+		.min_uV		= 750000,
+		.max_uV		= 3900000,
 		.boot_on	= 1,
-		.apply_uV	= 1,
-		.valid_ops_mask	= REGULATOR_CHANGE_STATUS,
+		.valid_ops_mask	= REGULATOR_CHANGE_STATUS |
+					REGULATOR_CHANGE_VOLTAGE,
 		.state_mem	= {
 			.disabled	= 1
 		},
@@ -602,6 +602,8 @@ static void lcd_hv070wsa_set_power(struct plat_lcd_data *pd, unsigned int power)
 
 static struct plat_lcd_data origen_lcd_hv070wsa_data = {
 	.set_power = lcd_hv070wsa_set_power,
+	.min_uV		= 3300000,
+	.max_uV		= 3300000,
 };
 
 static struct platform_device origen_lcd_hv070wsa = {
