@@ -309,6 +309,25 @@ static struct clksrc_clk clk_periphclk = {
 	.reg_div	= { .reg = S5P_CLKDIV_CPU, .shift = 12, .size = 3 },
 };
 
+static struct clk *clkset_mout_hpm_list[] = {
+	[0] = &clk_mout_apll.clk,
+	[1] = &clk_mout_mpll.clk,
+};
+
+static struct clksrc_sources clkset_sclk_hpm = {
+	.sources	= clkset_mout_hpm_list,
+	.nr_sources	= ARRAY_SIZE(clkset_mout_hpm_list),
+};
+
+static struct clksrc_clk clk_dout_copy = {
+	.clk	= {
+		.name		= "dout_copy",
+	},
+	.sources = &clkset_sclk_hpm,
+	.reg_src = { .reg = S5P_CLKSRC_CPU, .shift = 20, .size = 1 },
+	.reg_div = { .reg = S5P_CLKDIV_CPU1, .shift = 0, .size = 3 },
+};
+
 /* Core list of CMU_CORE side */
 
 struct clk *clkset_corebus_list[] = {
@@ -1135,7 +1154,20 @@ static struct clksrc_clk clksrcs[] = {
 			.ctrlbit	= (1 << 16),
 		},
 		.reg_div = { .reg = S5P_CLKDIV_FSYS3, .shift = 8, .size = 8 },
-	}
+	}, {
+		.clk		= {
+			.name		= "sclk_hpm",
+			.parent		= &clk_dout_copy.clk,
+		},
+		.reg_div = { .reg = S5P_CLKDIV_CPU1, .shift = 4, .size = 3 },
+	}, {
+		.clk		= {
+			.name		= "sclk_pwi",
+		},
+		.sources = &clkset_group,
+		.reg_src = { .reg = S5P_CLKSRC_DMC, .shift = 16, .size = 4 },
+		.reg_div = { .reg = S5P_CLKDIV_DMC1, .shift = 8, .size = 4 },
+	},
 };
 
 static struct clksrc_clk clk_sclk_uart0 = {
@@ -1277,6 +1309,7 @@ static struct clksrc_clk *sysclks[] = {
 	&clk_armclk,
 	&clk_aclk_corem0,
 	&clk_aclk_cores,
+	&clk_dout_copy,
 	&clk_aclk_corem1,
 	&clk_periphclk,
 	&clk_mout_corebus,
