@@ -120,6 +120,10 @@ static struct clk dummy_apb_pclk = {
 	.id		= -1,
 };
 
+static struct clk clk_xxti = {
+	.name		= "xxti",
+};
+
 static int exynos4_clksrc_mask_top_ctrl(struct clk *clk, int enable)
 {
 	return s5p_gatectrl(S5P_CLKSRC_MASK_TOP, clk, enable);
@@ -812,7 +816,7 @@ static struct clk clk_fimd0 = {
 };
 
 static struct clk *clkset_mout_audss_list[] = {
-	NULL,
+	&clk_xxti,
 	&clk_fout_epll,
 };
 
@@ -824,7 +828,6 @@ static struct clksrc_sources clkset_mout_audss = {
 static struct clksrc_clk clk_mout_audss = {
 	.clk		= {
 		.name		= "busclk",
-		.id		= -1,
 	},
 	.sources	= &clkset_mout_audss,
 	.reg_src	= { .reg = S5P_CLKSRC_AUDSS, .shift = 0, .size = 1 },
