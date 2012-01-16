@@ -3697,9 +3697,15 @@ static int hub_thread(void *__unused)
 
 	do {
 		hub_events();
+#if 0
 		wait_event_freezable(khubd_wait,
 				!list_empty(&hub_event_list) ||
 				kthread_should_stop());
+#else
+		wait_event_freezable_timeout(khubd_wait,
+				!list_empty(&hub_event_list) ||
+				kthread_should_stop(), msecs_to_jiffies(1000));
+#endif
 	} while (!kthread_should_stop() || !list_empty(&hub_event_list));
 
 	pr_debug("%s: khubd exiting\n", usbcore_name);
