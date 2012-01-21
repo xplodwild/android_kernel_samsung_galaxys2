@@ -38,7 +38,7 @@
 
 static u64 dma_dmamask = DMA_BIT_MASK(32);
 
-u8 s5p6440_pdma_peri[] = {
+static u8 s5p6440_pdma_peri[] = {
 	DMACH_UART0_RX,
 	DMACH_UART0_TX,
 	DMACH_UART1_RX,
@@ -63,12 +63,12 @@ u8 s5p6440_pdma_peri[] = {
 	DMACH_SPI1_RX,
 };
 
-struct dma_pl330_platdata s5p6440_pdma_pdata = {
+static struct dma_pl330_platdata s5p6440_pdma_pdata = {
 	.nr_valid_peri = ARRAY_SIZE(s5p6440_pdma_peri),
 	.peri_id = s5p6440_pdma_peri,
 };
 
-u8 s5p6450_pdma_peri[] = {
+static u8 s5p6450_pdma_peri[] = {
 	DMACH_UART0_RX,
 	DMACH_UART0_TX,
 	DMACH_UART1_RX,
@@ -103,7 +103,7 @@ u8 s5p6450_pdma_peri[] = {
 	DMACH_UART5_TX,
 };
 
-struct dma_pl330_platdata s5p6450_pdma_pdata = {
+static struct dma_pl330_platdata s5p6450_pdma_pdata = {
 	.nr_valid_peri = ARRAY_SIZE(s5p6450_pdma_peri),
 	.peri_id = s5p6450_pdma_peri,
 };
