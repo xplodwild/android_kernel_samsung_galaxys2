@@ -1420,7 +1420,7 @@ void __init s5p_ehci_set_platdata(struct s5p_ehci_platdata *pd)
 #ifdef CONFIG_S3C_DEV_USB_HSOTG
 static struct resource s3c_usb_hsotg_resources[] = {
 	[0] = DEFINE_RES_MEM(S3C_PA_USB_HSOTG, SZ_128K),
-	[1] = DEFINE_RES_IRQ(IRQ_OTG),
+	[1] = DEFINE_RES_IRQ(IRQ_USB_HSOTG),
 };
 
 struct platform_device s3c_device_usb_hsotg = {
