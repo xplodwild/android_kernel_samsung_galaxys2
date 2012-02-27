@@ -14,8 +14,18 @@
 struct s5p_ehci_platdata {
 	int (*phy_init)(struct platform_device *pdev, int type);
 	int (*phy_exit)(struct platform_device *pdev, int type);
+	int (*burst_enable)(struct platform_device *pdev, void __iomem *base);
 };
 
 extern void s5p_ehci_set_platdata(struct s5p_ehci_platdata *pd);
+extern int s5p_ehci_burst_enable(struct platform_device *pdev,
+	void __iomem *base);
+
+/* EXYNOS */
+#define EHCI_INSNREG00				0x90
+#define EHCI_INSNREG00_ENABLE_INCR16		(1 << 25)
+#define EHCI_INSNREG00_ENABLE_INCR8		(1 << 24)
+#define EHCI_INSNREG00_ENABLE_INCR4		(1 << 23)
+#define EHCI_INSNREG00_ENABLE_INCRX_ALIGN	(1 << 22)
 
 #endif /* __PLAT_SAMSUNG_EHCI_H */

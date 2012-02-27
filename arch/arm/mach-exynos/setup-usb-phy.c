@@ -18,6 +18,7 @@
 #include <mach/regs-usb-phy.h>
 #include <plat/cpu.h>
 #include <plat/usb-phy.h>
+#include <plat/ehci.h>
 
 static atomic_t host_usage;
 
@@ -148,4 +149,13 @@ int s5p_usb_phy_exit(struct platform_device *pdev, int type)
 		return exynos4_usb_phy1_exit(pdev);
 
 	return -EINVAL;
+}
+
+int s5p_ehci_burst_enable(struct platform_device *pdev, void __iomem *base)
+{
+	writel(EHCI_INSNREG00_ENABLE_INCR16 | EHCI_INSNREG00_ENABLE_INCR8 |
+		EHCI_INSNREG00_ENABLE_INCR4 | EHCI_INSNREG00_ENABLE_INCRX_ALIGN,
+		base + EHCI_INSNREG00);
+
+	return 0;
 }
