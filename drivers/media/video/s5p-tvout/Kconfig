@@ -1,0 +1,89 @@
+config VIDEO_SAMSUNG_TVOUT
+        bool "Samsung TVOUT Device"
+        depends on VIDEO_CAPTURE_DRIVERS && VIDEO_V4L2
+        select VIDEO_FIXED_MINOR_RANGES
+        default n
+        ---help---
+          This is a representative video4linux configuration for Samsung tvout devices.
+
+if CPU_EXYNOS4210
+config HDMI_CEC
+        bool "HDMI CEC driver support."
+        depends on VIDEO_SAMSUNG_TVOUT && CPU_EXYNOS4210
+        default y
+        ---help---
+          This is a HDMI CEC driver for Samsung S5P platform.
+          Check dev node (major 10, minor 242)
+
+config S5P_HDMI_HPD
+        bool "HDMI HPD driver support."
+	depends on VIDEO_SAMSUNG_TVOUT && CPU_EXYNOS4210
+        default y
+        ---help---
+          This is a HDMI HPD driver for Samsung S5P platform.
+          Check dev node (major 10, minor 243)
+
+config TV_FB
+        bool "TVOUT frame buffer driver support."
+        select FB_CFB_FILLRECT
+        select FB_CFB_COPYAREA
+        select FB_CFB_IMAGEBLIT
+
+	depends on VIDEO_SAMSUNG_TVOUT && CPU_EXYNOS4210
+        default y
+        ---help---
+
+config USER_ALLOC_TVOUT
+        bool "Support pre allocated frame buffer memory."
+        depends on VIDEO_SAMSUNG_TVOUT && TV_FB
+        default y
+        ---help---
+          TV Driver doesn't allocate memory for frame buffer.
+          So, before enabling TV out, the frame buffer should be allocated.
+
+config TV_FB_NUM
+        int "Index of TVOUT frame buffer"
+        depends on VIDEO_SAMSUNG_TVOUT && TV_FB && !USER_ALLOC_TVOUT
+        default 5
+        ---help---
+
+config TV_DEBUG
+        bool "TVOUT driver debug message"
+        depends on VIDEO_SAMSUNG_TVOUT
+        default n
+
+config VP_DEBUG
+        bool "Video Processor debug message"
+        depends on TV_DEBUG
+        default n
+
+config MIXER_DEBUG
+        bool "Mixer debug message"
+        depends on TV_DEBUG
+        default n
+
+config HDMI_DEBUG
+        bool "HDMI debug message"
+        depends on TV_DEBUG
+        default n
+
+config SDO_DEBUG
+        bool "SDO(Composite) debug message"
+        depends on TV_DEBUG
+        default n
+
+config HDCP_DEBUG
+        bool "HDCP debug message"
+        depends on TV_DEBUG
+        default n
+
+config CEC_DEBUG
+        bool "CEC debug message"
+        depends on TV_DEBUG
+        default n
+
+config HPD_DEBUG
+        bool "HPD debug message"
+        depends on TV_DEBUG
+        default n
+endif
