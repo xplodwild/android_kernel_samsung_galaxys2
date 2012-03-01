@@ -994,7 +994,7 @@ static struct gpio universal_camera_gpios[] = {
 /* USB OTG */
 static struct s3c_hsotg_plat universal_hsotg_pdata;
 
-static void universal_camera_init(void)
+static void __init universal_camera_init(void)
 {
 	s3c_set_platdata(&mipi_csis_platdata, sizeof(mipi_csis_platdata),
 			 &s5p_device_mipi_csis0);
