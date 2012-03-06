@@ -575,7 +575,7 @@ static void __init smdk4210_fixup(struct machine_desc *desc,
 }
 
 MACHINE_START(SMDK4210, "SMDK4210")
-	/* Maintainer: JeongHyeon Kim <jhkim@insignal.co.kr> */
+	/* Maintainer: XpLoDWilD <xplodgui@gmail.com> */
 	.boot_params	= S5P_PA_SDRAM + 0x100,
 	.init_irq	= exynos4_init_irq,
 	.fixup		= smdk4210_fixup,
