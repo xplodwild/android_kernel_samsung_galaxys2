@@ -129,7 +129,7 @@ static struct i2c_board_info i2c_devs6[] __initdata = {
 };
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
-	.cd_type		= S3C_SDHCI_CD_INTERNAL,
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
 	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
 #ifdef CONFIG_EXYNOS4_SDHCI_CH0_8BIT
 	.max_width		= 8,
@@ -138,10 +138,11 @@ static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
 };
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc2_pdata __initdata = {
-	.cd_type		= S3C_SDHCI_CD_INTERNAL,
+	.cd_type		= S3C_SDHCI_CD_GPIO,
 	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.ext_cd_gpio_invert	= true,
 #ifdef CONFIG_EXYNOS4_SDHCI_CH2_8BIT
-	.max_width		= 8,
+	.max_width		= 4,
 	.host_caps		= MMC_CAP_8_BIT_DATA,
 #endif
 };
@@ -157,7 +158,7 @@ static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
 	.max_width		= 4,
 	.host_caps		= MMC_CAP_4_BIT_DATA |
 			MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
-	.cd_type		= S3C_SDHCI_CD_EXTERNAL,
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
 	.ext_cd_init		= smdk4210_wifi_status_register,
 };
 
