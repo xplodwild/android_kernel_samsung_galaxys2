@@ -47,7 +47,7 @@ struct s3c_ts_info {
 	enum s3c_adc_type       s3c_adc_con;
 
 #ifdef CONFIG_HAS_WAKELOCK
-//	struct early_suspend early_suspend;
+	struct early_suspend early_suspend;
 #endif
 };
 
