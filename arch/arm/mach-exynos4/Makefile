@@ -47,6 +47,7 @@ obj-$(CONFIG_EXYNOS4_DEV_AHCI)		+= dev-ahci.o
 obj-$(CONFIG_EXYNOS4_DEV_PD)		+= dev-pd.o
 obj-$(CONFIG_EXYNOS4_DEV_SYSMMU)	+= dev-sysmmu.o
 obj-$(CONFIG_MACH_ORIGEN)		+= dev-pmic.o
+obj-$(CONFIG_MACH_SMDK4210)		+= dev-pmic.o
 
 obj-$(CONFIG_EXYNOS4_SETUP_FB_S3C)      += setup-fb.o
 obj-$(CONFIG_EXYNOS4_SETUP_FIMC)	+= setup-fimc.o
