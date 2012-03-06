@@ -11,6 +11,7 @@ obj-$(CONFIG_FB_S3C_LTE480WV)	+= s3cfb_lte480wv.o
 obj-$(CONFIG_FB_S3C_HT101HD1)	+= s3cfb_ht101hd1.o
 obj-$(CONFIG_FB_S3C_WA101S)	+= s3cfb_wa101s.o
 obj-$(CONFIG_FB_S3C_AMS369FG06)	+= s3cfb_ams369fg06.o
+obj-$(CONFIG_FB_S3C_LD9040)	+= s3cfb_ld9040.o
 endif
 
 ifeq ($(CONFIG_FB_S3C_DEBUG),y)

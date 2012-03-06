@@ -97,6 +97,12 @@ config FB_S3C_LTE480WV
 	help
 	  This enables support for Samsung LTE480WV 4.8" WVGA LCD panel
 
+config FB_S3C_LD9040
+	bool "LD9040"
+	depends on MACH_SMDKV310 || MACH_SMDKC210 || MACH_SMDKV210 || MACH_SMDK4210
+	help
+	  This enables support for Samsung LD9040 AMOLED Panel
+
 config FB_S3C_WA101S
 	bool "WA101S"
 	depends on MACH_SMDKV310 || MACH_SMDKC210
