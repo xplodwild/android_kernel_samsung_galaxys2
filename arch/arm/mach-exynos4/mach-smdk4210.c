@@ -30,6 +30,7 @@
 #include <plat/cpu.h>
 #include <plat/devs.h>
 #include <plat/sdhci.h>
+#include <plat/mshci.h>
 #include <plat/iic.h>
 #include <plat/bootmem.h>
 #include <plat/fb.h>
@@ -865,39 +866,59 @@ static struct i2c_board_info i2c_devs6[] __initdata = {
 	},
 };
 
-static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
+/*static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
 	.cd_type		= S3C_SDHCI_CD_PERMANENT,
 	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
 #ifdef CONFIG_EXYNOS4_SDHCI_CH0_8BIT
 	.max_width		= 8,
 	.host_caps		= MMC_CAP_8_BIT_DATA,
 #endif
-};
+};*/
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc2_pdata __initdata = {
 	.cd_type		= S3C_SDHCI_CD_GPIO,
-	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	/* .clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL, */
 	.ext_cd_gpio_invert	= true,
+	.ext_cd_gpio		= EXYNOS4_GPX3(4),
 #ifdef CONFIG_EXYNOS4_SDHCI_CH2_8BIT
+	#error "This should not be defined for Galaxy S II"
 	.max_width		= 4,
-	.host_caps		= MMC_CAP_8_BIT_DATA,
+	/*.host_caps		= MMC_CAP_8_BIT_DATA,*/
 #endif
 };
 
+static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
+};
+
+static struct s3c_mshci_platdata smdk4210_mshc_pdata __initdata = {
+	.cd_type		= S3C_MSHCI_CD_PERMANENT,
+	.max_width		= 8,
+	.host_caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_1_8V_DDR,
+};
+
+
+
+
 /*
  * WLAN: SDIO Host will call this func at booting time
+ * !!!! REMOVE ME: Origen stuff, unrelated to GalaxyS2
+
  */
 static int smdk4210_wifi_status_register(void (*notify_func)
 		(struct platform_device *, int state));
 
 /* WLAN: MMC3-SDIO */
+/*
+
+!!!! REMOVE ME: Origen stuff, unrelated to GalaxyS2
 static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
 	.max_width		= 4,
 	.host_caps		= MMC_CAP_4_BIT_DATA |
 			MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
 	.cd_type		= S3C_SDHCI_CD_PERMANENT,
 	.ext_cd_init		= smdk4210_wifi_status_register,
-};
+};*/
 
 /*
  * WLAN: Save SDIO Card detect func into this pointer
@@ -1098,8 +1119,8 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_i2c1,
 	&s3c_device_i2c6,
 	&s3c_device_hsmmc2,
-	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc3,
+	&s3c_device_mshci,
 	&s3c_device_rtc,
 	&s3c_device_wdt,
 	&s5p_device_ohci,
@@ -1211,8 +1232,10 @@ static void __init smdk4210_machine_init(void)
 	s3c_device_fb.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
 #endif
 	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
-	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
+	//s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
 	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
+	s3c_mshci_set_platdata(&smdk4210_mshc_pdata);
+
 	
 #ifdef CONFIG_VIDEO_FIMG2D
 	s5p_fimg2d_set_platdata(&fimg2d_data);
