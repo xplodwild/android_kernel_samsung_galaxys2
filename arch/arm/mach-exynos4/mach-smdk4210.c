@@ -69,7 +69,6 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 		.ucon		= SMDK4210_UCON_DEFAULT,
 		.ulcon		= SMDK4210_ULCON_DEFAULT,
 		.ufcon		= SMDK4210_UFCON_DEFAULT,
-		/* this should be used for bt wake: .wake_peer	= c1_bt_uart_wake_peer, */
 	},
 	[1] = {
 		.hwport		= 1,
@@ -92,13 +91,6 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 		.ulcon		= SMDK4210_ULCON_DEFAULT,
 		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
-	[4] = {
-                .hwport         = 4,
-                .flags          = 0,
-                .ucon           = SMDK4210_UCON_DEFAULT,
-                .ulcon          = SMDK4210_ULCON_DEFAULT,
-                .ufcon          = SMDK4210_UFCON_DEFAULT,
-        },
 };
 
 /* I2C0 */
