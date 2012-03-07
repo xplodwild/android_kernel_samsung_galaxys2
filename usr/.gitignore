@@ -8,3 +8,11 @@ initramfs_data.cpio.bz2
 initramfs_data.cpio.lzma
 initramfs_list
 include
+
+# do not ignore
+!galaxys2_initramfs.list
+!galaxys2_initramfs_files
+!busybox
+!init
+!mfc_fw.bin
+!read_boot_headers
