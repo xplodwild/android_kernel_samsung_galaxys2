@@ -37,7 +37,7 @@ CONFIG_SMP=y
 CONFIG_NR_CPUS=2
 CONFIG_PREEMPT=y
 CONFIG_AEABI=y
-CONFIG_CMDLINE="loglevel=4 console=ttySAC2,115200 sec_debug.enable=0 sec_debug.enable_user=0 c1_watchdog.sec_pet=5 sec_log=0x100000@0x4d900000 s3cfb.bootloaderfb=0x5ec00000 ld9040.get_lcdtype=0x2 consoleblank=0 lpj=3981312 vmalloc=144m"
+CONFIG_CMDLINE="loglevel=4 console=ttySAC2,115200 sec_debug.enable=0 sec_debug.enable_user=0 c1_watchdog.sec_pet=5 sec_log=0x100000@0x4d900000 s3cfb.bootloaderfb=0x5ec00000 ld9040.get_lcdtype=0x2 consoleblank=0 lpj=3981312 vmalloc=144m root=/dev/mmcblk0p1"
 CONFIG_CMDLINE_FORCE=y
 CONFIG_KEXEC=y
 CONFIG_FPE_NWFPE=y

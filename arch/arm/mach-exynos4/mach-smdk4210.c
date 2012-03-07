@@ -46,6 +46,7 @@
 #include <plat/tvout.h>
 #include <mach/map.h>
 #include <mach/bootmem.h>
+#include <mach/regs-clock.h>
 
 extern struct max8997_platform_data max8997_pdata;
 
@@ -1184,6 +1185,19 @@ static void __init smdk4210_machine_init(void)
 	exynos4_pd_enable(&exynos4_device_pd[PD_LCD1].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_CAM].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_TV].dev);
+	
+	
+	printk("XPLOD: MMC Card init");
+	s3c_gpio_cfgpin(GPIO_MASSMEM_EN, S3C_GPIO_OUTPUT);
+	gpio_set_value(GPIO_MASSMEM_EN, GPIO_MASSMEM_EN_LEVEL);
+	
+	/* 400 kHz for initialization of MMC Card  */
+	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS3) & 0xfffffff0)
+		     | 0x9, S5P_CLKDIV_FSYS3);
+	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS2) & 0xfff0fff0)
+		     | 0x80008, S5P_CLKDIV_FSYS2);
+	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS1) & 0xfff0fff0)
+		     | 0x90009, S5P_CLKDIV_FSYS1);
 
 	printk("XPLOD: Platdata...");
 	s3c_i2c0_set_platdata(NULL);
