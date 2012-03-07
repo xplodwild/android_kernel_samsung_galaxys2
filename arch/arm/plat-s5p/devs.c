@@ -107,7 +107,7 @@ void __init s3cfb_set_platdata(struct s3c_platform_fb *pd)
 
 		s3cfb_get_clk_name(npd->clk_name);
 #if defined(CONFIG_FB_S3C_WA101S) || defined(CONFIG_FB_S3C_AMS369FG06) \
-		|| defined(CONFIG_FB_S3C_LTE480WV)
+		|| defined(CONFIG_FB_S3C_LTE480WV) || defined(CONFIG_FB_S3C_LD9040)
 		npd->cfg_gpio = s3cfb_cfg_gpio;
 #else
 		printk(KERN_ALERT "panel not defined");

@@ -306,7 +306,102 @@ int s3cfb_lcd_off(struct platform_device *pdev)
 {
 	return 0;
 }
+
+#elif defined(CONFIG_FB_S3C_LD9040)
+
+void s3cfb_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+	u32 reg;
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF0(i), S3C_GPIO_PULL_NONE);
+#if MAX_DRVSTR
+		s5p_gpio_set_drvstr(EXYNOS4_GPF0(i), S5P_GPIO_DRVSTR_LV4);
 #else
+		s5p_gpio_set_drvstr(EXYNOS4_GPF0(i), S5P_GPIO_DRVSTR_LV2);
+#endif
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF1(i), S3C_GPIO_PULL_NONE);
+#if MAX_DRVSTR
+		s5p_gpio_set_drvstr(EXYNOS4_GPF1(i), S5P_GPIO_DRVSTR_LV4);
+#else
+		s5p_gpio_set_drvstr(EXYNOS4_GPF1(i), S5P_GPIO_DRVSTR_LV2);
+#endif
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF2(i), S3C_GPIO_PULL_NONE);
+#if MAX_DRVSTR
+		s5p_gpio_set_drvstr(EXYNOS4_GPF2(i), S5P_GPIO_DRVSTR_LV4);
+#else
+		s5p_gpio_set_drvstr(EXYNOS4_GPF2(i), S5P_GPIO_DRVSTR_LV2);
+#endif
+	}
+
+	for (i = 0; i < 4; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF3(i), S3C_GPIO_PULL_NONE);
+#if MAX_DRVSTR
+		s5p_gpio_set_drvstr(EXYNOS4_GPF3(i), S5P_GPIO_DRVSTR_LV4);
+#else
+		s5p_gpio_set_drvstr(EXYNOS4_GPF3(i), S5P_GPIO_DRVSTR_LV2);
+#endif
+	}
+
+	/* Set FIMD0 bypass */
+#ifdef CONFIG_FB_S3C_MDNIE
+	reg = __raw_readl(S3C_VA_SYS + 0x0210);
+	reg &= ~(1<<13);
+	reg &= ~(1<<12);
+	reg &= ~(3<<10);
+	reg |= (1<<0);
+	reg &= ~(1<<1);
+	__raw_writel(reg, S3C_VA_SYS + 0x0210);
+#else
+	reg = __raw_readl(S3C_VA_SYS + 0x0210);
+	reg |= (1<<1);
+	__raw_writel(reg, S3C_VA_SYS + 0x0210);
+#endif
+}
+
+
+void s3cfb_cfg_gpio_sleep(struct platform_device *pdev)
+{
+	int i;
+
+	/*
+		Put all LCD GPIO pin into "INPUT-PULLDOWN" State to reduce sleep mode current
+	*/
+
+	for (i = 0; i < 8; i++) {
+		gpio_direction_input(EXYNOS4_GPF0(i));
+		s3c_gpio_setpull(EXYNOS4_GPF0(i), S3C_GPIO_PULL_DOWN);
+	}
+
+	for (i = 0; i < 8; i++) {
+		gpio_direction_input(EXYNOS4_GPF1(i));
+		s3c_gpio_setpull(EXYNOS4_GPF1(i), S3C_GPIO_PULL_DOWN);
+	}
+
+	for (i = 0; i < 8; i++) {
+		gpio_direction_input(EXYNOS4_GPF2(i));
+		s3c_gpio_setpull(EXYNOS4_GPF2(i), S3C_GPIO_PULL_DOWN);
+	}
+
+	for (i = 0; i < 4; i++) {
+		gpio_direction_input(EXYNOS4_GPF3(i));
+		s3c_gpio_setpull(EXYNOS4_GPF3(i), S3C_GPIO_PULL_DOWN);
+	}
+
+}
+
+
 int s3cfb_backlight_on(struct platform_device *pdev)
 {
 	return 0;
@@ -326,4 +421,97 @@ int s3cfb_lcd_off(struct platform_device *pdev)
 {
 	return 0;
 }
+
+#elif defined(CONFIG_FB_S3C_MIPI_LCD)
+void s3cfb_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+	u32 reg;
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF0(i), S3C_GPIO_PULL_NONE);
+		s5p_gpio_set_drvstr(EXYNOS4_GPF0(i), S5P_GPIO_DRVSTR_LV4);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF1(i), S3C_GPIO_PULL_NONE);
+		s5p_gpio_set_drvstr(EXYNOS4_GPF1(i), S5P_GPIO_DRVSTR_LV4);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF2(i), S3C_GPIO_PULL_NONE);
+		s5p_gpio_set_drvstr(EXYNOS4_GPF2(i), S5P_GPIO_DRVSTR_LV4);
+	}
+
+	for (i = 0; i < 4; i++) {
+		s3c_gpio_cfgpin(EXYNOS4_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(EXYNOS4_GPF3(i), S3C_GPIO_PULL_NONE);
+		s5p_gpio_set_drvstr(EXYNOS4_GPF3(i), S5P_GPIO_DRVSTR_LV4);
+	}
+
+	/* Set FIMD0 bypass */
+#ifdef CONFIG_FB_S3C_MDNIE
+	reg = __raw_readl(S3C_VA_SYS + 0x0210);
+	reg &= ~(1<<13);
+	reg &= ~(1<<12);
+	reg &= ~(3<<10);
+	reg |= (1<<0);
+	reg &= ~(1<<1);
+	__raw_writel(reg, S3C_VA_SYS + 0x0210);
+#else
+	reg = __raw_readl(S3C_VA_SYS + 0x0210);
+	reg |= (1<<1);
+	__raw_writel(reg, S3C_VA_SYS + 0x0210);
+#endif
+}
+
+int s3cfb_backlight_on(struct platform_device *pdev)
+{
+	return 0;
+}
+
+int s3cfb_backlight_off(struct platform_device *pdev)
+{
+	return 0;
+}
+
+int s3cfb_lcd_on(struct platform_device *pdev)
+{
+	return 0;
+}
+
+int s3cfb_lcd_off(struct platform_device *pdev)
+{
+	return 0;
+}
+
+#else
+
+void s3cfb_cfg_gpio(struct platform_device *pdev)
+{
+	return;
+}
+int s3cfb_backlight_on(struct platform_device *pdev)
+{
+	return 0;
+}
+
+int s3cfb_backlight_off(struct platform_device *pdev)
+{
+	return 0;
+}
+
+int s3cfb_lcd_on(struct platform_device *pdev)
+{
+	return 0;
+}
+
+int s3cfb_lcd_off(struct platform_device *pdev)
+{
+	return 0;
+}
+
 #endif
