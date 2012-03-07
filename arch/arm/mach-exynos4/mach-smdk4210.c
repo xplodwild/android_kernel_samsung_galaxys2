@@ -36,6 +36,7 @@
 #include <plat/fimg2d.h>
 #include <plat/fimc.h>
 #include <plat/pd.h>
+#include <plat/pm.h>
 #include <plat/gpio-cfg.h>
 #include <plat/backlight.h>
 #include <plat/otg.h>
@@ -1170,6 +1171,21 @@ static struct s5p_platform_cec hdmi_cec_data __initdata = {
 
 static void __init smdk4210_machine_init(void)
 {
+	printk("XPLOD: Machine init start");
+	c1_config_gpio_table();
+	
+	printk("XPLOD: PM Init");
+	s3c_pm_init();
+	
+	printk("XPLOD: PD Enable");
+	exynos4_pd_enable(&exynos4_device_pd[PD_MFC].dev);
+	exynos4_pd_enable(&exynos4_device_pd[PD_G3D].dev);
+	exynos4_pd_enable(&exynos4_device_pd[PD_LCD0].dev);
+	exynos4_pd_enable(&exynos4_device_pd[PD_LCD1].dev);
+	exynos4_pd_enable(&exynos4_device_pd[PD_CAM].dev);
+	exynos4_pd_enable(&exynos4_device_pd[PD_TV].dev);
+
+	printk("XPLOD: Platdata...");
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
 	s3c_i2c6_set_platdata(NULL);
@@ -1183,8 +1199,7 @@ static void __init smdk4210_machine_init(void)
 	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
 	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
 	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
-	c1_config_gpio_table();
-
+	
 #ifdef CONFIG_VIDEO_FIMG2D
 	s5p_fimg2d_set_platdata(&fimg2d_data);
 	s5p_device_fimg2d.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
@@ -1202,18 +1217,23 @@ static void __init smdk4210_machine_init(void)
 #endif
 	platform_add_devices(smdk4210_devices, ARRAY_SIZE(smdk4210_devices));
 #ifdef CONFIG_USB_GADGET_S3C_OTGD
-	 smdk4210_otg_init();
+	printk("XPLOD: USB OTG init"); 
+	smdk4210_otg_init();
 #endif
+
+	printk("XPLOD: OHCI init");
 	smdk4210_ohci_init();
 	clk_xusbxti.rate = 24000000;
+	printk("XPLOD: EHCI init");
 	smdk4210_ehci_init();
 
+	printk("XPLOD: BL set");
 	samsung_bl_set(&smdk4210_bl_gpio_info, &smdk4210_bl_data);
 
 	smdk4210_bt_setup();
 
 	ath6kl_set_platform_data(&smdk4210_wlan_data);
-
+	printk("XPLOD: == MACHINE INIT DONE ==");
 }
 
 #if defined(CONFIG_S5P_MEM_CMA)

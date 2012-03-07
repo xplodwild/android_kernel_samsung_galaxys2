@@ -27,4 +27,6 @@ enum exynos4_pd_block {
 	PD_GPS
 };
 
+int exynos4_pd_enable(struct device *dev);
+
 #endif /* __ASM_PLAT_SAMSUNG_PD_H */

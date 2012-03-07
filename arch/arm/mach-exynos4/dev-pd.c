@@ -19,7 +19,7 @@
 
 #include <plat/pd.h>
 
-static int exynos4_pd_enable(struct device *dev)
+int exynos4_pd_enable(struct device *dev)
 {
 	struct samsung_pd_info *pdata =  dev->platform_data;
 	u32 timeout;
@@ -42,7 +42,7 @@ static int exynos4_pd_enable(struct device *dev)
 	return 0;
 }
 
-static int exynos4_pd_disable(struct device *dev)
+int exynos4_pd_disable(struct device *dev)
 {
 	struct samsung_pd_info *pdata =  dev->platform_data;
 	u32 timeout;
