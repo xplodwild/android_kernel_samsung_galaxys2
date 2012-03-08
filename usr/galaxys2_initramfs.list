@@ -1,8 +1,8 @@
 
 #####################
 # .
-# Last modified: 1303434626.6776324710
-
+## Last modified: 1303434626.6776324710
+echo "INITRAMFS IS READING"
 dir /dev 755 0 0
 dir /dev/block 755 0 0
 nod /dev/block/mmcblk0 600 0 0 b 179 0
