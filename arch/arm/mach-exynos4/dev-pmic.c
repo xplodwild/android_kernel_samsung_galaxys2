@@ -323,7 +323,7 @@ static struct regulator_init_data max8997_led_movie_data = {
 
 
 static struct max8997_regulator_data max8997_regulators[] = {
-	{ MAX8997_LDO1,		&ldo1_data },
+//	{ MAX8997_LDO1,		&ldo1_data },
 	{ MAX8997_LDO3,		&ldo3_data },
 	{ MAX8997_LDO4,		&ldo4_data },
 	{ MAX8997_LDO5,		&ldo5_data },
