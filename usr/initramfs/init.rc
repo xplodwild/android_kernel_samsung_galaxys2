@@ -44,8 +44,8 @@ loglevel 3
     mkdir /acct/uid
 
     mkdir /system
-    mkdir /data 0771 system system
-    mkdir /cache 0770 system cache
+    mkdir /data 0777 system system
+    mkdir /cache 0777 system cache
     mkdir /config 0500 root root
 	mkdir /preload 0771 system system
 
@@ -211,17 +211,17 @@ on post-fs-data
     mkdir /data/misc/wifi 0770 wifi wifi
     chmod 0770 /data/misc/wifi
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
-    mkdir /data/local 0771 shell shell
-    mkdir /data/local/tmp 0771 shell shell
-    mkdir /data/data 0771 system system
-    mkdir /data/app-private 0771 system system
-    mkdir /data/app 0771 system system
+    mkdir /data/local 0777 shell shell
+    mkdir /data/local/tmp 0777 shell shell
+    mkdir /data/data 0777 system system
+    mkdir /data/app-private 0777 system system
+    mkdir /data/app 0777 system system
     mkdir /data/property 0700 root root
 
     # create dalvik-cache and double-check the perms
     mkdir /data/dalvik-cache 0771 system system
     chown system system /data/dalvik-cache
-    chmod 0771 /data/dalvik-cache
+    chmod 0777 /data/dalvik-cache
 
     # create the lost+found directories, so as to enforce our permissions
     mkdir /data/lost+found 0770
