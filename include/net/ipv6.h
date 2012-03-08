@@ -20,6 +20,7 @@
 #include <net/flow.h>
 #include <net/snmp.h>
 
+#include <linux/in6.h>
 #define SIN6_LEN_RFC2133	24
 
 #define IPV6_MAXPLEN		65535
