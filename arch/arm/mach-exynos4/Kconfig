@@ -289,7 +289,9 @@ config MACH_SMDK4210
         select S3C_DEV_I2C0
         select S3C_DEV_I2C1
 	select S3C_DEV_I2C3
+	select S3C_DEV_I2C5
         select S3C_DEV_I2C6
+	select S3C_DEV_I2C7
         select EXYNOS4_DEV_PD  
         select SAMSUNG_DEV_PWM   
         select EXYNOS4_DEV_SYSMMU
@@ -297,6 +299,8 @@ config MACH_SMDK4210
         select EXYNOS4_SETUP_I2C0 
         select EXYNOS4_SETUP_I2C1
 	select EXYNOS4_SETUP_I2C3
+	select EXYNOS4_SETUP_I2C5
+	select EXYNOS4_SETUP_I2C7
         select S5P_DEV_USB_HSDEVICE
         select S5P_DEV_USB_OHCI
         select S5P_DEV_USB_EHCI

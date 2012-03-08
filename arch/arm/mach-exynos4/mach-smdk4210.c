@@ -158,10 +158,12 @@ static struct mxt_platform_data mxt_platform_data = {
 
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
-	{
+	{ I2C_BOARD_INFO("24c128", 0x50), },	/* Samsung S524AD0XD1 */
+	{ I2C_BOARD_INFO("24c128", 0x52), 		/* Samsung S524AD0XD1 */
+		
 		/* The address is 0xCC used since SRAD = 0 */
-		I2C_BOARD_INFO("max8997", (0xCC >> 1)),
-		.platform_data = &max8997_pdata,
+		/*I2C_BOARD_INFO("max8997", (0xCC >> 1)),
+		.platform_data = &max8997_pdata,*/
 	},
 
 };
@@ -172,11 +174,7 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 		I2C_BOARD_INFO("rt5625", 0x1e),
 	},
 };
-static struct i2c_board_info i2c_devs6[] __initdata = {
-	{
-		I2C_BOARD_INFO("s5p_ddc", (0x74 >> 1)),
-	},
-};
+
 
 /* I2C2 */
 
@@ -187,6 +185,25 @@ static struct i2c_board_info i2c_devs3[] __initdata = {
 	{
 		I2C_BOARD_INFO("atmel_mxt_ts", 0x4a),
 		.platform_data = &mxt_platform_data,
+	},
+};
+
+/* I2C5 */
+static struct i2c_board_info i2c_devs5[] __initdata = {
+	{
+		I2C_BOARD_INFO("max8997", (0xCC >> 1)),
+		.platform_data = &max8997_pdata,
+	},
+};
+
+/* I2C6 */
+
+/* To Do */
+
+/* I2C7 */
+static struct i2c_board_info i2c_devs7[] __initdata = {
+	{
+		I2C_BOARD_INFO("s5p_ddc", (0x74 >> 1)), /* TVOUT */
 	},
 };
 
@@ -592,12 +609,14 @@ static void __init smdk4210_machine_init(void)
 	smdk4210_tsp_init();
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
-	s3c_i2c6_set_platdata(NULL);
 	s3c_i2c3_set_platdata(NULL);
+	s3c_i2c5_set_platdata(NULL);
+	s3c_i2c7_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
-	i2c_register_board_info(2, i2c_devs6, ARRAY_SIZE(i2c_devs6));
 	i2c_register_board_info(3, i2c_devs3, ARRAY_SIZE(i2c_devs3)); /* TSP */
+	i2c_register_board_info(5, i2c_devs5, ARRAY_SIZE(i2c_devs5));
+	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));
 	
 #ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(NULL);
