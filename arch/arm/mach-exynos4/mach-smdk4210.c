@@ -304,6 +304,7 @@ static void smdk4210_wlan_setup_power(bool val)
 
 /*
  * This will be called at init time of WLAN driver
+ * WARNING: Remove me! This is code for ORIGEN, not GalaxyS2 :)
  */
 int smdk4210_wifi_set_detect(bool val)
 {
@@ -558,13 +559,10 @@ static void __init smdk4210_tsp_init(void)
 
 static void __init smdk4210_machine_init(void)
 {
-	printk("XPLOD: Machine init start\n");
 	c1_config_gpio_table();
 	
-	printk("XPLOD: PM Init\n");
 	s3c_pm_init();
 	
-	printk("XPLOD: PD Enable\n");
 	exynos4_pd_enable(&exynos4_device_pd[PD_MFC].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_G3D].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_LCD0].dev);
@@ -572,8 +570,8 @@ static void __init smdk4210_machine_init(void)
 	exynos4_pd_enable(&exynos4_device_pd[PD_CAM].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_TV].dev);
 	
-	printk("XPLOD: SROMC Setup\n");
-	
+	/* SROMC Setup */
+	/* TODO: Move me to a separate function */
 	u32 tmp;
 
 	tmp = __raw_readl(S5P_SROM_BW);
@@ -593,7 +591,7 @@ static void __init smdk4210_machine_init(void)
 	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x1c0));
 	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x1e0));	
 	
-	printk("XPLOD: MMC Card init\n");
+	/* MMC Card init */
 	s3c_gpio_cfgpin(GPIO_MASSMEM_EN, S3C_GPIO_OUTPUT);
 	gpio_set_value(GPIO_MASSMEM_EN, GPIO_MASSMEM_EN_LEVEL);
 	
@@ -605,7 +603,7 @@ static void __init smdk4210_machine_init(void)
 	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS1) & 0xfff0fff0)
 		     | 0x90009, S5P_CLKDIV_FSYS1);
 
-	printk("XPLOD: Platdata...\n");
+	/* PLATDATA init */
 	smdk4210_tsp_init();
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
@@ -645,23 +643,19 @@ static void __init smdk4210_machine_init(void)
 #endif
 	platform_add_devices(smdk4210_devices, ARRAY_SIZE(smdk4210_devices));
 #ifdef CONFIG_USB_GADGET_S3C_OTGD
-	printk("XPLOD: USB OTG init\n"); 
 	smdk4210_otg_init();
 #endif
 
-	printk("XPLOD: OHCI init\n");
 	smdk4210_ohci_init();
 	clk_xusbxti.rate = 24000000;
-	printk("XPLOD: EHCI init\n");
+
 	smdk4210_ehci_init();
 
-	printk("XPLOD: BL set");
 	samsung_bl_set(&smdk4210_bl_gpio_info, &smdk4210_bl_data);
 
 	smdk4210_bt_setup();
 
-	ath6kl_set_platform_data(&smdk4210_wlan_data);
-	printk("XPLOD: == MACHINE INIT DONE ==\n\n");
+	/* ORIGEN: ath6kl_set_platform_data(&smdk4210_wlan_data); */
 }
 
 #if defined(CONFIG_S5P_MEM_CMA)
