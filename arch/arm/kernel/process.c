@@ -1,4 +1,4 @@
-*
+/*
  *  linux/arch/arm/kernel/process.c
  *
  *  Copyright (C) 1996-2000 Russell King - Converted to ARM.
@@ -61,7 +61,6 @@ extern void setup_mm_for_reboot(void);
 
 static volatile int hlt_counter;
 
-#include <mach/system.h>
 
 #ifdef CONFIG_SMP
 void arch_trigger_all_cpu_backtrace(void)
