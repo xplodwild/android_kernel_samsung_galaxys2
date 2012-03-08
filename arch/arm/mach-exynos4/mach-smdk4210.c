@@ -40,6 +40,7 @@
 #include <plat/pm.h>
 #include <plat/gpio-cfg.h>
 #include <plat/backlight.h>
+#include <linux/i2c/atmel_mxt_ts.h>
 #include <plat/otg.h>
 #include <plat/ohci.h>
 #include <plat/ehci.h>
@@ -51,6 +52,10 @@
 #include <mach/regs-mem.h>
 
 extern struct max8997_platform_data max8997_pdata;
+
+/* Extern init setup functions */
+extern void c1_config_gpio_table(void);
+
 
 /* Following are default values for UCON, ULCON and UFCON UART registers */
 #define SMDK4210_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL |	\
@@ -65,9 +70,6 @@ extern struct max8997_platform_data max8997_pdata;
 #define SMDK4210_UFCON_DEFAULT	(S3C2410_UFCON_FIFOMODE |	\
 				 S5PV210_UFCON_TXTRIG4 |	\
 				 S5PV210_UFCON_RXTRIG4)
-
-extern void c1_config_gpio_table(void);
-
 
 static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 	[0] = {
@@ -99,6 +101,60 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
 };
+/* TSP */
+static u8 mxt_init_vals[] = {
+	/* MXT_GEN_COMMAND(6) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* MXT_GEN_POWER(7) */
+	0x20, 0xff, 0x32,
+	/* MXT_GEN_ACQUIRE(8) */
+	0x0a, 0x00, 0x05, 0x00, 0x00, 0x00, 0x09, 0x23,
+	/* MXT_TOUCH_MULTI(9) */
+	0x00, 0x00, 0x00, 0x13, 0x0b, 0x00, 0x00, 0x00, 0x02, 0x00,
+	0x00, 0x01, 0x01, 0x0e, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00,
+	/* MXT_TOUCH_KEYARRAY(15) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00,
+	0x00,
+	/* MXT_SPT_GPIOPWM(19) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* MXT_PROCI_GRIPFACE(20) */
+	0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50, 0x28, 0x04,
+	0x0f, 0x0a,
+	/* MXT_PROCG_NOISE(22) */
+	0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x23, 0x00,
+	0x00, 0x05, 0x0f, 0x19, 0x23, 0x2d, 0x03,
+	/* MXT_TOUCH_PROXIMITY(23) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	/* MXT_PROCI_ONETOUCH(24) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* MXT_SPT_SELFTEST(25) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
+	/* MXT_PROCI_TWOTOUCH(27) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* MXT_SPT_CTECONFIG(28) */
+	0x00, 0x00, 0x02, 0x08, 0x10, 0x00,
+};
+
+static struct mxt_platform_data mxt_platform_data = {
+	.config			= mxt_init_vals,
+	.config_length		= ARRAY_SIZE(mxt_init_vals),
+
+	.x_line			= 18,
+	.y_line			= 11,
+	.x_size			= 480,
+	.y_size			= 800,
+	.blen			= 0x1,
+	.threshold		= 0x28,
+	.voltage		= 2800000,		/* 2.8V */
+	.orient			= MXT_DIAGONAL,
+	.irqflags		= IRQF_TRIGGER_FALLING,
+};
 
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -107,12 +163,7 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 		I2C_BOARD_INFO("max8997", (0xCC >> 1)),
 		.platform_data = &max8997_pdata,
 	},
-#ifdef CONFIG_TOUCHSCREEN_UNIDISPLAY_TS
-	{
-		I2C_BOARD_INFO("unidisplay_ts", 0x41),
-		.irq = EINT_NUMBER(25),
-	},
-#endif
+
 };
 
 /* I2C1 */
@@ -124,6 +175,18 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 static struct i2c_board_info i2c_devs6[] __initdata = {
 	{
 		I2C_BOARD_INFO("s5p_ddc", (0x74 >> 1)),
+	},
+};
+
+/* I2C2 */
+
+/* To Do */
+
+/* I2C3 */
+static struct i2c_board_info i2c_devs3[] __initdata = {
+	{
+		I2C_BOARD_INFO("atmel_mxt_ts", 0x4a),
+		.platform_data = &mxt_platform_data,
 	},
 };
 
@@ -378,6 +441,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 #endif
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
+	&s3c_device_i2c3,
 	&s3c_device_i2c6,
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc2,
@@ -453,6 +517,28 @@ static struct s5p_platform_cec hdmi_cec_data __initdata = {
 };
 #endif
 
+static void __init smdk4210_tsp_init(void)
+{
+	int gpio;
+
+	/* TSP_LDO_ON: XMDMADDR_11 */
+	gpio = GPIO_TSP_LDO_ON;
+	gpio_request(gpio, "TSP_LDO_ON");
+	gpio_direction_output(gpio, 1);
+	s3c_gpio_setpull(GPIO_TSP_INT, S3C_GPIO_PULL_NONE);
+	gpio_export(gpio, 0);
+	
+	/* TSP_INT: XMDMADDR_7 */
+	gpio = GPIO_TSP_INT;
+	gpio_request(gpio, "TSP_INT");
+	s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0xf));
+	s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	i2c_devs3[0].irq = gpio_to_irq(gpio);
+	
+	printk("%s touch : %d", __func__, i2c_devs3[0].irq);
+}
+
+
 static void __init smdk4210_machine_init(void)
 {
 	printk("XPLOD: Machine init start\n");
@@ -503,12 +589,16 @@ static void __init smdk4210_machine_init(void)
 		     | 0x90009, S5P_CLKDIV_FSYS1);
 
 	printk("XPLOD: Platdata...\n");
+	smdk4210_tsp_init();
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
 	s3c_i2c6_set_platdata(NULL);
+	s3c_i2c3_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 	i2c_register_board_info(2, i2c_devs6, ARRAY_SIZE(i2c_devs6));
+	i2c_register_board_info(3, i2c_devs3, ARRAY_SIZE(i2c_devs3)); /* TSP */
+	
 #ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(NULL);
 	s3c_device_fb.dev.parent = &exynos4_device_pd[PD_LCD0].dev;

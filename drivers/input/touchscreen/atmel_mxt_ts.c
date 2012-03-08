@@ -1072,7 +1072,11 @@ static int __devinit mxt_probe(struct i2c_client *client,
 		goto err_free_mem;
 	}
 
+#ifndef CONFIG_CPU_EXYNOS4210
 	input_dev->name = "Atmel maXTouch Touchscreen";
+#else
+	input_dev->name = "sec_touchscreen";
+#endif
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->dev.parent = &client->dev;
 	input_dev->open = mxt_input_open;
