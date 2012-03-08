@@ -1383,10 +1383,10 @@ static void __init smdk4210_fixup(struct machine_desc *desc,
 				struct meminfo *mi)
 {
 	mi->bank[0].start = 0x40000000;
-	mi->bank[0].size = 512 * SZ_1M;
+	mi->bank[0].size = 0x10000000; //512 * SZ_1M;
 
-	mi->bank[1].start = 0x60000000;
-	mi->bank[1].size = 512 * SZ_1M;
+	mi->bank[1].start = 0x50000000;
+	mi->bank[1].size = 0x10000000; //512 * SZ_1M;
 
 	mi->nr_banks = 2;
 }
