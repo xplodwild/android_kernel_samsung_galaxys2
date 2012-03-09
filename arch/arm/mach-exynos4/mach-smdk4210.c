@@ -18,6 +18,7 @@
 #include <linux/delay.h>
 #include <linux/rfkill-gpio.h>
 #include <linux/ath6kl.h>
+#include <linux/power_supply.h>
 #if defined(CONFIG_S5P_MEM_CMA)
 #include <linux/cma.h>
 #endif
@@ -53,8 +54,17 @@
 #include <mach/regs-clock.h>
 #include <mach/regs-mem.h>
 #include <mach/pm-core.h>
+#include <mach/sec_battery.h>
+#include <mach/gpio-smdk4210-rev02.h>
 
-extern struct max8997_platform_data max8997_pdata;
+
+struct max8922_platform_data {
+	int	(*topoff_cb)(void);
+	int	(*cfg_gpio)(void);
+	int	gpio_chg_en;
+	int	gpio_chg_ing;
+	int	gpio_ta_nconnected;
+};
 
 /* Extern init setup functions */
 extern void c1_config_gpio_table(void);
@@ -154,8 +164,8 @@ static struct mxt_platform_data mxt_pdata = {
 	.y_line			= 11,
 	.x_size			= 480,
 	.y_size			= 800,
-	.blen			= 0x1,
-	.threshold		= 0x28,
+	.blen			= 0x0,
+	.threshold		= 0x18,
 	.voltage		= 2800000,		/* 2.8V */
 	.orient			= MXT_DIAGONAL,
 	.irqflags		= IRQF_TRIGGER_FALLING,
@@ -166,6 +176,7 @@ static struct max17042_platform_data max17042_pdata = {
 	.enable_current_sense = false,
 };
 
+extern struct max8997_platform_data max8997_pdata;
 
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -485,6 +496,248 @@ static struct regulator_consumer_supply emmc_supplies[] = {
 	REGULATOR_SUPPLY("vmmc", "dw_mmc"),
 };
 
+
+/* temperature table for ADC 6 */
+static struct sec_bat_adc_table_data temper_table[] =  {
+	{  273,	 670 },
+	{  289,	 660 },
+	{  304,	 650 },
+	{  314,	 640 },
+	{  325,	 630 },
+	{  337,	 620 },
+	{  347,	 610 },
+	{  361,	 600 },
+	{  376,	 590 },
+	{  391,	 580 },
+	{  406,	 570 },
+	{  417,	 560 },
+	{  431,	 550 },
+	{  447,	 540 },
+	{  474,	 530 },
+	{  491,	 520 },
+	{  499,	 510 },
+	{  511,	 500 },
+	{  519,	 490 },
+	{  547,	 480 },
+	{  568,	 470 },
+	{  585,	 460 },
+	{  597,	 450 },
+	{  614,	 440 },
+	{  629,	 430 },
+	{  647,	 420 },
+	{  672,	 410 },
+	{  690,	 400 },
+	{  720,	 390 },
+	{  735,	 380 },
+	{  755,	 370 },
+	{  775,	 360 },
+	{  795,	 350 },
+	{  818,	 340 },
+	{  841,	 330 },
+	{  864,	 320 },
+	{  887,	 310 },
+	{  909,	 300 },
+	{  932,	 290 },
+	{  954,	 280 },
+	{  976,	 270 },
+	{  999,	 260 },
+	{ 1021,	 250 },
+	{ 1051,	 240 },
+	{ 1077,	 230 },
+	{ 1103,	 220 },
+	{ 1129,	 210 },
+	{ 1155,	 200 },
+	{ 1177,	 190 },
+	{ 1199,	 180 },
+	{ 1220,	 170 },
+	{ 1242,	 160 },
+	{ 1263,	 150 },
+	{ 1284,	 140 },
+	{ 1306,	 130 },
+	{ 1326,	 120 },
+	{ 1349,	 110 },
+	{ 1369,	 100 },
+	{ 1390,	  90 },
+	{ 1411,	  80 },
+	{ 1433,	  70 },
+	{ 1454,	  60 },
+	{ 1474,	  50 },
+	{ 1486,	  40 },
+	{ 1499,	  30 },
+	{ 1512,	  20 },
+	{ 1531,	  10 },
+	{ 1548,	   0 },
+	{ 1570,	 -10 },
+	{ 1597,	 -20 },
+	{ 1624,	 -30 },
+	{ 1633,	 -40 },
+	{ 1643,	 -50 },
+	{ 1652,	 -60 },
+	{ 1663,	 -70 },
+};
+
+/* temperature table for ADC 7 */
+static struct sec_bat_adc_table_data temper_table_ADC7[] =  {
+	{  289,	 670 },
+	{  304,	 660 },
+	{  314,	 650 },
+	{  325,	 640 },
+	{  337,	 630 },
+	{  347,	 620 },
+	{  358,	 610 },
+	{  371,	 600 },
+	{  384,	 590 },
+	{  396,	 580 },
+	{  407,	 570 },
+	{  419,	 560 },
+	{  431,	 550 },
+	{  447,	 540 },
+	{  474,	 530 },
+	{  491,	 520 },
+	{  499,	 510 },
+	{  511,	 500 },
+	{  529,	 490 },
+	{  547,	 480 },
+	{  568,	 470 },
+	{  585,	 460 },
+	{  597,	 450 },
+	{  611,	 440 },
+	{  626,	 430 },
+	{  643,	 420 },
+	{  665,	 410 },
+	{  680,	 400 },
+	{  703,	 390 },
+	{  720,	 380 },
+	{  743,	 370 },
+	{  765,	 360 },
+	{  789,	 350 },
+	{  813,	 340 },
+	{  841,	 330 },
+	{  864,	 320 },
+	{  887,	 310 },
+	{  909,	 300 },
+	{  932,	 290 },
+	{  954,	 280 },
+	{  976,	 270 },
+	{  999,	 260 },
+	{ 1021,	 250 },
+	{ 1051,	 240 },
+	{ 1077,	 230 },
+	{ 1103,	 220 },
+	{ 1129,	 210 },
+	{ 1155,	 200 },
+	{ 1177,	 190 },
+	{ 1199,	 180 },
+	{ 1220,	 170 },
+	{ 1242,	 160 },
+	{ 1263,	 150 },
+	{ 1284,	 140 },
+	{ 1306,	 130 },
+	{ 1326,	 120 },
+	{ 1349,	 110 },
+	{ 1369,	 100 },
+	{ 1390,	  90 },
+	{ 1411,	  80 },
+	{ 1433,	  70 },
+	{ 1454,	  60 },
+	{ 1474,	  50 },
+	{ 1486,	  40 },
+	{ 1499,	  30 },
+	{ 1512,	  20 },
+	{ 1531,	  10 },
+	{ 1548,	   0 },
+	{ 1570,	 -10 },
+	{ 1597,	 -20 },
+	{ 1624,	 -30 },
+	{ 1633,	 -40 },
+	{ 1643,	 -50 },
+	{ 1652,	 -60 },
+	{ 1663,	 -70 },
+};
+#define ADC_CH_TEMPERATURE_PMIC	6
+#define ADC_CH_TEMPERATURE_LCD	7
+
+static unsigned int sec_bat_get_lpcharging_state(void)
+{
+	u32 val = __raw_readl(S5P_INFORM2);
+	struct power_supply *psy = power_supply_get_by_name("max8997-charger");
+	union power_supply_propval value;
+
+	BUG_ON(!psy);
+
+	if (val == 1) {
+		psy->get_property(psy, POWER_SUPPLY_PROP_STATUS, &value);
+		pr_info("%s: charging status: %d\n", __func__, value.intval);
+		if (value.intval == POWER_SUPPLY_STATUS_DISCHARGING)
+			pr_warn("%s: DISCHARGING\n", __func__);
+	}
+
+	pr_info("%s: LP charging:%d\n", __func__, val);
+	return val;
+}
+
+/*  : Fix me regarding ADC kernel Panic
+static void sec_bat_get_adc_value_cb(int value)
+{
+	if (sec_battery_cbs.lcd_set_adc_value) {
+		sec_battery_cbs.lcd_set_adc_value(value);
+	}
+}
+*/
+
+static struct sec_bat_platform_data sec_bat_pdata = {
+	.fuel_gauge_name	= "fuelgauge",
+	.charger_name		= "max8997-charger",
+	.sub_charger_name	= "max8922-charger",
+
+	/* TODO: should provide temperature table */
+	.adc_arr_size		= ARRAY_SIZE(temper_table),
+	.adc_table			= temper_table,
+	.adc_channel		= ADC_CH_TEMPERATURE_PMIC,
+	.adc_sub_arr_size	= ARRAY_SIZE(temper_table_ADC7),
+	.adc_sub_table		= temper_table_ADC7,
+	.adc_sub_channel	= ADC_CH_TEMPERATURE_LCD,
+	.get_lpcharging_state	= sec_bat_get_lpcharging_state,
+};
+
+static struct platform_device sec_device_battery = {
+	.name = "sec-battery",
+	.id = -1,
+	.dev.platform_data = &sec_bat_pdata,
+};
+
+static int max8922_cfg_gpio(void)
+{
+	if (system_rev < HWREV_FOR_BATTERY)
+		return -ENODEV;
+
+	s3c_gpio_cfgpin(GPIO_CHG_EN, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_CHG_EN, S3C_GPIO_PULL_NONE);
+	gpio_set_value(GPIO_CHG_EN, GPIO_LEVEL_LOW);
+
+	s3c_gpio_cfgpin(GPIO_CHG_ING_N, S3C_GPIO_INPUT);
+	s3c_gpio_setpull(GPIO_CHG_ING_N, S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_cfgpin(GPIO_TA_nCONNECTED, S3C_GPIO_INPUT);
+	s3c_gpio_setpull(GPIO_TA_nCONNECTED, S3C_GPIO_PULL_NONE);
+
+	return 0;
+}
+
+static struct max8922_platform_data max8922_pdata = {
+	/*.topoff_cb = c1_charger_topoff_cb,*/
+	.cfg_gpio = max8922_cfg_gpio,
+	.gpio_chg_en = GPIO_CHG_EN,
+	.gpio_chg_ing = GPIO_CHG_ING_N,
+	.gpio_ta_nconnected = GPIO_TA_nCONNECTED,
+};
+
+static struct platform_device max8922_device_charger = {
+	.name = "max8922-charger",
+	.id = -1,
+	.dev.platform_data = &max8922_pdata,
+};
+
 static struct platform_device *smdk4210_devices[] __initdata = {
 	&exynos4_device_pd[PD_MFC],
 	&exynos4_device_pd[PD_G3D],
@@ -508,6 +761,8 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s5p_device_ohci,
 	&s5p_device_ehci,
+	&sec_device_battery,
+	&max8922_device_charger,
 	&exynos4_device_i2s0,
 	&samsung_asoc_dma,
 	&exynos4_device_sysmmu,
