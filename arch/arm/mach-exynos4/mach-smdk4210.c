@@ -57,6 +57,7 @@ extern struct max8997_platform_data max8997_pdata;
 
 /* Extern init setup functions */
 extern void c1_config_gpio_table(void);
+extern void c1_config_sleep_gpio_table(void);
 
 
 /* Following are default values for UCON, ULCON and UFCON UART registers */
@@ -358,6 +359,9 @@ struct ath6kl_platform_data smdk4210_wlan_data  __initdata = {
 };
 
 
+
+
+
 #ifdef CONFIG_VIDEO_FIMG2D
 static struct fimg2d_platdata fimg2d_data __initdata = {
 	.hw_ver = 30,
@@ -593,6 +597,7 @@ static void __init smdk4210_tsp_init(void)
 static void __init smdk4210_machine_init(void)
 {
 	c1_config_gpio_table();
+	c1_config_sleep_gpio_table();
 	
 	s3c_pm_init();
 	
