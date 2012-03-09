@@ -492,7 +492,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_i2c3,
 	&s3c_device_i2c5,
 	&s3c_device_i2c7,
-	//&s3c_device_i2c6,
+	&s3c_device_i2c6,
 	&exynos4_device_i2c9,
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc2,
@@ -642,11 +642,13 @@ static void __init smdk4210_machine_init(void)
 	s3c_i2c1_set_platdata(NULL);
 	s3c_i2c3_set_platdata(NULL);
 	s3c_i2c5_set_platdata(NULL);
+	s3c_i2c6_set_platdata(NULL);
 	s3c_i2c7_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 	i2c_register_board_info(3, i2c_devs3, ARRAY_SIZE(i2c_devs3)); /* TSP */
 	i2c_register_board_info(5, i2c_devs5, ARRAY_SIZE(i2c_devs5));
+	//i2c_register_board_info(6, i2c_devs6, ARRAY_SIZE(i2c_devs6));
 	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));
 	i2c_register_board_info(9, i2c_devs9_emul, ARRAY_SIZE(i2c_devs9_emul));
 	
