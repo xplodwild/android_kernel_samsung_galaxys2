@@ -1,4 +1,4 @@
-/* linux/arch/arm/mach-exynos4/mach-origen.c
+/* linux/arch/arm/mach-exynos4/mach-smdk4210.c
  *
  * Copyright (c) 2011 Insignal Co., Ltd.
  *		http://www.insignal.co.kr/
@@ -52,47 +52,47 @@
 #include "common.h"
 
 /* Following are default values for UCON, ULCON and UFCON UART registers */
-#define ORIGEN_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL |	\
+#define smdk4210_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL |	\
 				 S3C2410_UCON_RXILEVEL |	\
 				 S3C2410_UCON_TXIRQMODE |	\
 				 S3C2410_UCON_RXIRQMODE |	\
 				 S3C2410_UCON_RXFIFO_TOI |	\
 				 S3C2443_UCON_RXERR_IRQEN)
 
-#define ORIGEN_ULCON_DEFAULT	S3C2410_LCON_CS8
+#define smdk4210_ULCON_DEFAULT	S3C2410_LCON_CS8
 
-#define ORIGEN_UFCON_DEFAULT	(S3C2410_UFCON_FIFOMODE |	\
+#define smdk4210_UFCON_DEFAULT	(S3C2410_UFCON_FIFOMODE |	\
 				 S5PV210_UFCON_TXTRIG4 |	\
 				 S5PV210_UFCON_RXTRIG4)
 
-static struct s3c2410_uartcfg origen_uartcfgs[] __initdata = {
+static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 	[0] = {
 		.hwport		= 0,
 		.flags		= 0,
-		.ucon		= ORIGEN_UCON_DEFAULT,
-		.ulcon		= ORIGEN_ULCON_DEFAULT,
-		.ufcon		= ORIGEN_UFCON_DEFAULT,
+		.ucon		= smdk4210_UCON_DEFAULT,
+		.ulcon		= smdk4210_ULCON_DEFAULT,
+		.ufcon		= smdk4210_UFCON_DEFAULT,
 	},
 	[1] = {
 		.hwport		= 1,
 		.flags		= 0,
-		.ucon		= ORIGEN_UCON_DEFAULT,
-		.ulcon		= ORIGEN_ULCON_DEFAULT,
-		.ufcon		= ORIGEN_UFCON_DEFAULT,
+		.ucon		= smdk4210_UCON_DEFAULT,
+		.ulcon		= smdk4210_ULCON_DEFAULT,
+		.ufcon		= smdk4210_UFCON_DEFAULT,
 	},
 	[2] = {
 		.hwport		= 2,
 		.flags		= 0,
-		.ucon		= ORIGEN_UCON_DEFAULT,
-		.ulcon		= ORIGEN_ULCON_DEFAULT,
-		.ufcon		= ORIGEN_UFCON_DEFAULT,
+		.ucon		= smdk4210_UCON_DEFAULT,
+		.ulcon		= smdk4210_ULCON_DEFAULT,
+		.ufcon		= smdk4210_UFCON_DEFAULT,
 	},
 	[3] = {
 		.hwport		= 3,
 		.flags		= 0,
-		.ucon		= ORIGEN_UCON_DEFAULT,
-		.ulcon		= ORIGEN_ULCON_DEFAULT,
-		.ufcon		= ORIGEN_UFCON_DEFAULT,
+		.ucon		= smdk4210_UCON_DEFAULT,
+		.ulcon		= smdk4210_ULCON_DEFAULT,
+		.ufcon		= smdk4210_UFCON_DEFAULT,
 	},
 };
 
@@ -401,7 +401,7 @@ static struct regulator_init_data __initdata max8997_buck7_data = {
 	.consumer_supplies	= buck7_consumer,
 };
 
-static struct max8997_regulator_data __initdata origen_max8997_regulators[] = {
+static struct max8997_regulator_data __initdata smdk4210_max8997_regulators[] = {
 	{ MAX8997_LDO1,		&max8997_ldo1_data },
 	{ MAX8997_LDO2,		&max8997_ldo2_data },
 	{ MAX8997_LDO3,		&max8997_ldo3_data },
@@ -422,9 +422,9 @@ static struct max8997_regulator_data __initdata origen_max8997_regulators[] = {
 	{ MAX8997_BUCK7,	&max8997_buck7_data },
 };
 
-static struct max8997_platform_data __initdata origen_max8997_pdata = {
-	.num_regulators = ARRAY_SIZE(origen_max8997_regulators),
-	.regulators	= origen_max8997_regulators,
+static struct max8997_platform_data __initdata smdk4210_max8997_pdata = {
+	.num_regulators = ARRAY_SIZE(smdk4210_max8997_regulators),
+	.regulators	= smdk4210_max8997_regulators,
 
 	.wakeup	= true,
 	.buck1_gpiodvs	= false,
@@ -471,7 +471,7 @@ static struct max8997_platform_data __initdata origen_max8997_pdata = {
 static struct i2c_board_info i2c0_devs[] __initdata = {
 	{
 		I2C_BOARD_INFO("max8997", (0xCC >> 1)),
-		.platform_data	= &origen_max8997_pdata,
+		.platform_data	= &smdk4210_max8997_pdata,
 		.irq		= IRQ_EINT(4),
 	},
 #ifdef CONFIG_TOUCHSCREEN_UNIDISPLAY_TS
@@ -489,11 +489,11 @@ static struct i2c_board_info i2c1_devs[] __initdata = {
 	},
 };
 
-static struct s3c_sdhci_platdata origen_hsmmc0_pdata __initdata = {
+static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
 	.cd_type		= S3C_SDHCI_CD_INTERNAL,
 };
 
-static struct s3c_sdhci_platdata origen_hsmmc2_pdata __initdata = {
+static struct s3c_sdhci_platdata smdk4210_hsmmc2_pdata __initdata = {
 	.cd_type		= S3C_SDHCI_CD_INTERNAL,
 };
 
@@ -501,16 +501,16 @@ static struct s3c_sdhci_platdata origen_hsmmc2_pdata __initdata = {
 /*
  * WLAN: SDIO Host will call this func at booting time
  */
-static int origen_wifi_status_register(void (*notify_func)
+static int smdk4210_wifi_status_register(void (*notify_func)
 		(struct platform_device *, int state));
 
 /* WLAN: MMC3-SDIO */
-static struct s3c_sdhci_platdata origen_hsmmc3_pdata __initdata = {
+static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
 	.max_width		= 4,
 	.host_caps		= MMC_CAP_4_BIT_DATA |
 			MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
 	.cd_type		= S3C_SDHCI_CD_EXTERNAL,
-	.ext_cd_init		= origen_wifi_status_register,
+	.ext_cd_init		= smdk4210_wifi_status_register,
 };
 
 /*
@@ -518,7 +518,7 @@ static struct s3c_sdhci_platdata origen_hsmmc3_pdata __initdata = {
  */
 static void (*wifi_status_cb)(struct platform_device *, int state);
 
-static int origen_wifi_status_register(void (*notify_func)
+static int smdk4210_wifi_status_register(void (*notify_func)
 		(struct platform_device *, int state))
 {
 	if (!notify_func)
@@ -529,31 +529,31 @@ static int origen_wifi_status_register(void (*notify_func)
 	return 0;
 }
 
-#define ORIGEN_WLAN_WOW EXYNOS4_GPX2(3)
-#define ORIGEN_WLAN_RESET EXYNOS4_GPX2(4)
+#define smdk4210_WLAN_WOW EXYNOS4_GPX2(3)
+#define smdk4210_WLAN_RESET EXYNOS4_GPX2(4)
 
 
-static void origen_wlan_setup_power(bool val)
+static void smdk4210_wlan_setup_power(bool val)
 {
 	int err;
 
 	if (val) {
-		err = gpio_request_one(ORIGEN_WLAN_RESET,
+		err = gpio_request_one(smdk4210_WLAN_RESET,
 				GPIOF_OUT_INIT_LOW, "GPX2_4");
 		if (err) {
-			pr_warning("ORIGEN: Not obtain WIFI gpios\n");
+			pr_warning("smdk4210: Not obtain WIFI gpios\n");
 			return;
 		}
-		s3c_gpio_cfgpin(ORIGEN_WLAN_RESET, S3C_GPIO_OUTPUT);
-		s3c_gpio_setpull(ORIGEN_WLAN_RESET,
+		s3c_gpio_cfgpin(smdk4210_WLAN_RESET, S3C_GPIO_OUTPUT);
+		s3c_gpio_setpull(smdk4210_WLAN_RESET,
 						S3C_GPIO_PULL_NONE);
 		/* VDD33,I/O Supply must be done */
-		gpio_set_value(ORIGEN_WLAN_RESET, 0);
+		gpio_set_value(smdk4210_WLAN_RESET, 0);
 		udelay(30);	/*Tb */
-		gpio_direction_output(ORIGEN_WLAN_RESET, 1);
+		gpio_direction_output(smdk4210_WLAN_RESET, 1);
 	} else {
-		gpio_direction_output(ORIGEN_WLAN_RESET, 0);
-		gpio_free(ORIGEN_WLAN_RESET);
+		gpio_direction_output(smdk4210_WLAN_RESET, 0);
+		gpio_free(smdk4210_WLAN_RESET);
 	}
 
 	mdelay(100);
@@ -564,80 +564,80 @@ static void origen_wlan_setup_power(bool val)
 /*
  * This will be called at init time of WLAN driver
  */
-static int origen_wifi_set_detect(bool val)
+static int smdk4210_wifi_set_detect(bool val)
 {
 	if (!wifi_status_cb) {
 		printk(KERN_WARNING "WLAN: Nobody to notify\n");
 		return -EAGAIN;
 	}
 	if (true == val) {
-		origen_wlan_setup_power(true);
+		smdk4210_wlan_setup_power(true);
 		wifi_status_cb(&s3c_device_hsmmc3, 1);
 	} else {
-		origen_wlan_setup_power(false);
+		smdk4210_wlan_setup_power(false);
 		wifi_status_cb(&s3c_device_hsmmc3, 0);
 	}
 
 	return 0;
 }
 
-struct ath6kl_platform_data origen_wlan_data  __initdata = {
-	.setup_power = origen_wifi_set_detect,
+struct ath6kl_platform_data smdk4210_wlan_data  __initdata = {
+	.setup_power = smdk4210_wifi_set_detect,
 };
 
 
 /* USB EHCI */
-static struct s5p_ehci_platdata origen_ehci_pdata;
+static struct s5p_ehci_platdata smdk4210_ehci_pdata;
 
-static void __init origen_ehci_init(void)
+static void __init smdk4210_ehci_init(void)
 {
-	struct s5p_ehci_platdata *pdata = &origen_ehci_pdata;
+	struct s5p_ehci_platdata *pdata = &smdk4210_ehci_pdata;
 
 	s5p_ehci_set_platdata(pdata);
 }
 
 /* USB OHCI */
-static struct exynos4_ohci_platdata origen_ohci_pdata;
+static struct exynos4_ohci_platdata smdk4210_ohci_pdata;
 
-static void __init origen_ohci_init(void)
+static void __init smdk4210_ohci_init(void)
 {
-	struct exynos4_ohci_platdata *pdata = &origen_ohci_pdata;
+	struct exynos4_ohci_platdata *pdata = &smdk4210_ohci_pdata;
 
 	exynos4_ohci_set_platdata(pdata);
 }
 
 /* USB OTG */
-static struct s3c_hsotg_plat origen_hsotg_pdata;
+static struct s3c_hsotg_plat smdk4210_hsotg_pdata;
 
-static struct gpio_led origen_gpio_leds[] = {
+static struct gpio_led smdk4210_gpio_leds[] = {
 	{
-		.name			= "origen::status1",
+		.name			= "smdk4210::status1",
 		.default_trigger	= "heartbeat",
 		.gpio			= EXYNOS4_GPX1(3),
 		.active_low		= 1,
 	},
 	{
-		.name			= "origen::status2",
+		.name			= "smdk4210::status2",
 		.default_trigger	= "mmc0",
 		.gpio			= EXYNOS4_GPX1(4),
 		.active_low		= 1,
 	},
 };
 
-static struct gpio_led_platform_data origen_gpio_led_info = {
-	.leds		= origen_gpio_leds,
-	.num_leds	= ARRAY_SIZE(origen_gpio_leds),
+static struct gpio_led_platform_data smdk4210_gpio_led_info = {
+	.leds		= smdk4210_gpio_leds,
+	.num_leds	= ARRAY_SIZE(smdk4210_gpio_leds),
 };
 
-static struct platform_device origen_leds_gpio = {
+static struct platform_device smdk4210_leds_gpio = {
 	.name	= "leds-gpio",
 	.id	= -1,
 	.dev	= {
-		.platform_data	= &origen_gpio_led_info,
+		.platform_data	= &smdk4210_gpio_led_info,
 	},
 };
 
-static struct gpio_keys_button origen_gpio_keys_table[] = {
+static struct gpio_keys_button smdk4210_gpio_keys_table[] = {
 	{
 		.code			= KEY_MENU,
 		.gpio			= EXYNOS4_GPX1(5),
@@ -681,15 +681,15 @@ static struct gpio_keys_button origen_gpio_keys_table[] = {
 	},
 };
 
-static struct gpio_keys_platform_data origen_gpio_keys_data = {
-	.buttons	= origen_gpio_keys_table,
-	.nbuttons	= ARRAY_SIZE(origen_gpio_keys_table),
+static struct gpio_keys_platform_data smdk4210_gpio_keys_data = {
+	.buttons	= smdk4210_gpio_keys_table,
+	.nbuttons	= ARRAY_SIZE(smdk4210_gpio_keys_table),
 };
 
-static struct platform_device origen_device_gpiokeys = {
+static struct platform_device smdk4210_device_gpiokeys = {
 	.name		= "gpio-keys",
 	.dev		= {
-		.platform_data	= &origen_gpio_keys_data,
+		.platform_data	= &smdk4210_gpio_keys_data,
 	},
 };
 
@@ -710,19 +710,19 @@ static void lcd_hv070wsa_set_power(struct plat_lcd_data *pd, unsigned int power)
 		pr_err("failed to request gpio for LCD power: %d\n", ret);
 }
 
-static struct plat_lcd_data origen_lcd_hv070wsa_data = {
+static struct plat_lcd_data smdk4210_lcd_hv070wsa_data = {
 	.set_power = lcd_hv070wsa_set_power,
 	.min_uV		= 3300000,
 	.max_uV		= 3300000,
 };
 
-static struct platform_device origen_lcd_hv070wsa = {
+static struct platform_device smdk4210_lcd_hv070wsa = {
 	.name			= "platform-lcd",
 	.dev.parent		= &s5p_device_fimd0.dev,
-	.dev.platform_data	= &origen_lcd_hv070wsa_data,
+	.dev.platform_data	= &smdk4210_lcd_hv070wsa_data,
 };
 
-static struct s3c_fb_pd_win origen_fb_win0 = {
+static struct s3c_fb_pd_win smdk4210_fb_win0 = {
 	.win_mode = {
 		.left_margin	= 64,
 		.right_margin	= 16,
@@ -737,8 +737,8 @@ static struct s3c_fb_pd_win origen_fb_win0 = {
 	.default_bpp		= 24,
 };
 
-static struct s3c_fb_platdata origen_lcd_pdata __initdata = {
-	.win[0]		= &origen_fb_win0,
+static struct s3c_fb_platdata smdk4210_lcd_pdata __initdata = {
+	.win[0]		= &smdk4210_fb_win0,
 	.vidcon0	= VIDCON0_VIDOUT_RGB | VIDCON0_PNRMODE_RGB,
 	.vidcon1	= VIDCON1_INV_HSYNC | VIDCON1_INV_VSYNC |
 				VIDCON1_INV_VCLK,
@@ -746,23 +746,23 @@ static struct s3c_fb_platdata origen_lcd_pdata __initdata = {
 };
 
 /* Bluetooth rfkill gpio platform data */
-struct rfkill_gpio_platform_data origen_bt_pdata = {
+struct rfkill_gpio_platform_data smdk4210_bt_pdata = {
 	.reset_gpio	= EXYNOS4_GPX2(2),
 	.shutdown_gpio	= -1,
 	.type		= RFKILL_TYPE_BLUETOOTH,
-	.name		= "origen-bt",
+	.name		= "smdk4210-bt",
 };
 
 /* Bluetooth Platform device */
-static struct platform_device origen_device_bluetooth = {
+static struct platform_device smdk4210_device_bluetooth = {
 	.name		= "rfkill_gpio",
 	.id		= -1,
 	.dev		= {
-		.platform_data	= &origen_bt_pdata,
+		.platform_data	= &smdk4210_bt_pdata,
 	},
 };
 
-static struct platform_device *origen_devices[] __initdata = {
+static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_hsmmc2,
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc3,
@@ -796,25 +796,25 @@ static struct platform_device *origen_devices[] __initdata = {
 	&exynos4_device_pd[PD_CAM],
 	&exynos4_device_pd[PD_GPS],
 	&exynos4_device_pd[PD_MFC],
-	&origen_device_gpiokeys,
-	&origen_lcd_hv070wsa,
-	&origen_leds_gpio,
-	&origen_device_bluetooth,
+	&smdk4210_device_gpiokeys,
+	&smdk4210_lcd_hv070wsa,
+	&smdk4210_leds_gpio,
+	&smdk4210_device_bluetooth,
 	&exynos4_device_tmu,
 };
 
 /* LCD Backlight data */
-static struct samsung_bl_gpio_info origen_bl_gpio_info = {
+static struct samsung_bl_gpio_info smdk4210_bl_gpio_info = {
 	.no		= EXYNOS4_GPD0(0),
 	.func		= S3C_GPIO_SFN(2),
 };
 
-static struct platform_pwm_backlight_data origen_bl_data = {
+static struct platform_pwm_backlight_data smdk4210_bl_data = {
 	.pwm_id		= 0,
 	.pwm_period_ns	= 1000,
 };
 
-static void __init origen_bt_setup(void)
+static void __init smdk4210_bt_setup(void)
 {
 	gpio_request(EXYNOS4_GPA0(0), "GPIO BT_UART");
 	/* 4 UART Pins configuration */
@@ -832,28 +832,28 @@ static void s5p_tv_setup(void)
 	s3c_gpio_setpull(EXYNOS4_GPX3(7), S3C_GPIO_PULL_NONE);
 }
 
-static void __init origen_map_io(void)
+static void __init smdk4210_map_io(void)
 {
 	exynos_init_io(NULL, 0);
 	s3c24xx_init_clocks(24000000);
-	s3c24xx_init_uarts(origen_uartcfgs, ARRAY_SIZE(origen_uartcfgs));
+	s3c24xx_init_uarts(smdk4210_uartcfgs, ARRAY_SIZE(smdk4210_uartcfgs));
 }
 
-static void __init origen_power_init(void)
+static void __init smdk4210_power_init(void)
 {
 	gpio_request(EXYNOS4_GPX0(4), "PMIC_IRQ");
 	s3c_gpio_cfgpin(EXYNOS4_GPX0(4), S3C_GPIO_SFN(0xf));
 	s3c_gpio_setpull(EXYNOS4_GPX0(4), S3C_GPIO_PULL_NONE);
 }
 
-static void __init origen_reserve(void)
+static void __init smdk4210_reserve(void)
 {
 	s5p_mfc_reserve_mem(0x43000000, 8 << 20, 0x51000000, 8 << 20);
 }
 
-static void __init origen_machine_init(void)
+static void __init smdk4210_machine_init(void)
 {
-	origen_power_init();
+	smdk4210_power_init();
 
 	s3c_i2c0_set_platdata(NULL);
 	i2c_register_board_info(0, i2c0_devs, ARRAY_SIZE(i2c0_devs));
@@ -865,21 +865,21 @@ static void __init origen_machine_init(void)
 	 * Since sdhci instance 2 can contain a bootable media,
 	 * sdhci instance 0 is registered after instance 2.
 	 */
-	s3c_sdhci2_set_platdata(&origen_hsmmc2_pdata);
-	s3c_sdhci0_set_platdata(&origen_hsmmc0_pdata);
-	s3c_sdhci3_set_platdata(&origen_hsmmc3_pdata);
+	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
+	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
+	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
 
-	origen_ehci_init();
-	origen_ohci_init();
-	s3c_hsotg_set_platdata(&origen_hsotg_pdata);
+	smdk4210_ehci_init();
+	smdk4210_ohci_init();
+	s3c_hsotg_set_platdata(&smdk4210_hsotg_pdata);
 	clk_xusbxti.rate = 24000000;
 
 	s5p_tv_setup();
 	s5p_i2c_hdmiphy_set_platdata(NULL);
 
-	s5p_fimd0_set_platdata(&origen_lcd_pdata);
+	s5p_fimd0_set_platdata(&smdk4210_lcd_pdata);
 
-	platform_add_devices(origen_devices, ARRAY_SIZE(origen_devices));
+	platform_add_devices(smdk4210_devices, ARRAY_SIZE(smdk4210_devices));
 
 	s5p_device_fimd0.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
 
@@ -888,21 +888,21 @@ static void __init origen_machine_init(void)
 
 	s5p_device_mfc.dev.parent = &exynos4_device_pd[PD_MFC].dev;
 
-	samsung_bl_set(&origen_bl_gpio_info, &origen_bl_data);
+	samsung_bl_set(&smdk4210_bl_gpio_info, &smdk4210_bl_data);
 
-	origen_bt_setup();
+	smdk4210_bt_setup();
 
-	ath6kl_set_platform_data(&origen_wlan_data);
+	ath6kl_set_platform_data(&smdk4210_wlan_data);
 }
 
-MACHINE_START(ORIGEN, "ORIGEN")
-	/* Maintainer: JeongHyeon Kim <jhkim@insignal.co.kr> */
+MACHINE_START(SMDK4210, "SMDK4210")
+	/* Maintainer: XpLoDWilD <xplodgui@gmail.com> */
 	.atag_offset	= 0x100,
 	.init_irq	= exynos4_init_irq,
-	.map_io		= origen_map_io,
+	.map_io		= smdk4210_map_io,
 	.handle_irq	= gic_handle_irq,
-	.init_machine	= origen_machine_init,
+	.init_machine	= smdk4210_machine_init,
 	.timer		= &exynos4_timer,
-	.reserve	= &origen_reserve,
+	.reserve	= &smdk4210_reserve,
 	.restart	= exynos4_restart,
 MACHINE_END
