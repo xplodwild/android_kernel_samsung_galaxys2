@@ -52,12 +52,14 @@
 #include <mach/bootmem.h>
 #include <mach/regs-clock.h>
 #include <mach/regs-mem.h>
+#include <mach/pm-core.h>
 
 extern struct max8997_platform_data max8997_pdata;
 
 /* Extern init setup functions */
 extern void c1_config_gpio_table(void);
 extern void c1_config_sleep_gpio_table(void);
+
 
 
 /* Following are default values for UCON, ULCON and UFCON UART registers */

@@ -956,3 +956,5 @@ void c1_config_sleep_gpio_table(void)
 	config_sleep_gpio_table(ARRAY_SIZE(c1_sleep_gpio_table),
 			c1_sleep_gpio_table);
 }
+
+s3c_config_sleep_gpio_table = c1_config_sleep_gpio_table;

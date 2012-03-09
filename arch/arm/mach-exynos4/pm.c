@@ -20,6 +20,7 @@
 #include <linux/io.h>
 #include <linux/err.h>
 #include <linux/clk.h>
+#include <linux/regulator/machine.h>
 
 #include <asm/cacheflush.h>
 #include <asm/hardware/cache-l2x0.h>
@@ -35,6 +36,7 @@
 #include <mach/pm-core.h>
 #include <mach/pmu.h>
 #include <mach/regs-audss.h>
+
 
 static struct sleep_save exynos4_set_clksrc[] = {
 	{ .reg = S5P_CLKSRC_MASK_TOP			, .val = 0x00000001, },
@@ -257,13 +259,24 @@ static void exynos4_pm_prepare(void)
 
 	s3c_pm_do_restore_core(exynos4_set_clksrc, ARRAY_SIZE(exynos4_set_clksrc));
 
+	int ret = 0;
+
+	if (s3c_config_sleep_gpio_table)
+		s3c_config_sleep_gpio_table();
+
+#if defined(CONFIG_REGULATOR)
+	ret = regulator_suspend_prepare(PM_SUSPEND_MEM);
+#endif
+
+	//return ret;
+
 }
 
 static int exynos4_pm_add(struct sys_device *sysdev)
 {
 	pm_cpu_prep = exynos4_pm_prepare;
 	pm_cpu_sleep = exynos4_cpu_suspend;
-
+	
 	return 0;
 }
 
