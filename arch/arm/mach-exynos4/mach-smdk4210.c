@@ -13,6 +13,7 @@
 #include <linux/input.h>
 #include <linux/pwm_backlight.h>
 #include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
 #include <linux/gpio_keys.h>
 #include <linux/delay.h>
 #include <linux/rfkill-gpio.h>
@@ -22,6 +23,7 @@
 #endif
 #include <linux/regulator/machine.h>
 #include <linux/regulator/fixed.h>
+#include <linux/power/max17042_battery.h>
 #include <asm/mach/arch.h>
 #include <asm/mach-types.h>
 
@@ -141,7 +143,7 @@ static u8 mxt_init_vals[] = {
 	0x00, 0x00, 0x02, 0x08, 0x10, 0x00,
 };
 
-static struct mxt_platform_data mxt_platform_data = {
+static struct mxt_platform_data mxt_pdata = {
 	.config			= mxt_init_vals,
 	.config_length		= ARRAY_SIZE(mxt_init_vals),
 
@@ -155,6 +157,12 @@ static struct mxt_platform_data mxt_platform_data = {
 	.orient			= MXT_DIAGONAL,
 	.irqflags		= IRQF_TRIGGER_FALLING,
 };
+
+/* MAX17042 */
+static struct max17042_platform_data max17042_pdata = {
+	.enable_current_sense = false,
+};
+
 
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -184,7 +192,7 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 static struct i2c_board_info i2c_devs3[] __initdata = {
 	{
 		I2C_BOARD_INFO("atmel_mxt_ts", 0x4a),
-		.platform_data = &mxt_platform_data,
+		.platform_data = &mxt_pdata,
 	},
 };
 
@@ -198,12 +206,34 @@ static struct i2c_board_info i2c_devs5[] __initdata = {
 
 /* I2C6 */
 
-/* To Do */
 
 /* I2C7 */
 static struct i2c_board_info i2c_devs7[] __initdata = {
 	{
 		I2C_BOARD_INFO("s5p_ddc", (0x74 >> 1)), /* TVOUT */
+	},
+};
+
+
+/* I2C9 */
+
+static struct i2c_gpio_platform_data i2c9_gpio_data = {
+	.sda_pin = GPIO_FUEL_SDA,
+	.scl_pin = GPIO_FUEL_SCL,
+};
+static struct platform_device exynos4_device_i2c9 = {
+	.name = "i2c_gpio",
+	.id = 0,
+	.dev = {
+		.platform_data = &i2c9_gpio_data,
+	},
+};
+
+static struct i2c_board_info i2c_devs9_emul[] __initdata = {
+	{
+		I2C_BOARD_INFO("max17042", 0x36),
+		.platform_data = &max17042_pdata,
+		.irq = IRQ_EINT(19),
 	},
 };
 
@@ -460,7 +490,10 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
 	&s3c_device_i2c3,
-	&s3c_device_i2c6,
+	&s3c_device_i2c5,
+	&s3c_device_i2c7,
+	//&s3c_device_i2c6,
+	&exynos4_device_i2c9,
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc2,
 	&s3c_device_hsmmc3,
@@ -615,6 +648,7 @@ static void __init smdk4210_machine_init(void)
 	i2c_register_board_info(3, i2c_devs3, ARRAY_SIZE(i2c_devs3)); /* TSP */
 	i2c_register_board_info(5, i2c_devs5, ARRAY_SIZE(i2c_devs5));
 	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));
+	i2c_register_board_info(9, i2c_devs9_emul, ARRAY_SIZE(i2c_devs9_emul));
 	
 #ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(NULL);
