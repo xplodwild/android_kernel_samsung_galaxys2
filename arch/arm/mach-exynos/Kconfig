@@ -346,6 +346,40 @@ config MACH_ORIGEN
 	help
 	  Machine support for ORIGEN based on Samsung EXYNOS4210
 
+config MACH_SMDK4210
+        bool "SMDK4210"
+        select CPU_EXYNOS4210
+        select S3C_DEV_RTC
+        select S3C_DEV_WDT
+        select S3C_DEV_HSMMC
+        select S3C_DEV_HSMMC2
+        select S3C_DEV_HSMMC3
+        select S3C_DEV_I2C1
+        select S3C_DEV_USB_HSOTG
+        select S5P_DEV_FIMC0 
+        select S5P_DEV_FIMC1
+        select S5P_DEV_FIMC2
+        select S5P_DEV_FIMC3  
+        select S5P_DEV_FIMD0
+        select S5P_DEV_G2D
+        select S5P_DEV_I2C_HDMIPHY
+        select S5P_DEV_JPEG
+        select S5P_DEV_MFC
+        select S5P_DEV_TV
+        select S5P_DEV_USB_EHCI
+        select SAMSUNG_DEV_BACKLIGHT
+        select SAMSUNG_DEV_PWM
+        select EXYNOS4_DEV_DMA
+        select EXYNOS4_DEV_PD
+        select EXYNOS4_DEV_TMU
+        select EXYNOS4_DEV_USB_OHCI
+        select EXYNOS4_SETUP_FIMD0
+        select EXYNOS4_SETUP_I2C1
+        select EXYNOS4_SETUP_SDHCI
+        select EXYNOS4_SETUP_USB_PHY
+        help
+          Machine support for SMDK4210 (Galaxy S II) based on Samsung EXYNOS4210
+
 comment "EXYNOS4212 Boards"
 
 config MACH_SMDK4212
