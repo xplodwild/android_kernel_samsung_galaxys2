@@ -52,16 +52,16 @@
 #include "common.h"
 
 /* Following are default values for UCON, ULCON and UFCON UART registers */
-#define smdk4210_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL |	\
+#define SMDK4210_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL |	\
 				 S3C2410_UCON_RXILEVEL |	\
 				 S3C2410_UCON_TXIRQMODE |	\
 				 S3C2410_UCON_RXIRQMODE |	\
 				 S3C2410_UCON_RXFIFO_TOI |	\
 				 S3C2443_UCON_RXERR_IRQEN)
 
-#define smdk4210_ULCON_DEFAULT	S3C2410_LCON_CS8
+#define SMDK4210_ULCON_DEFAULT	S3C2410_LCON_CS8
 
-#define smdk4210_UFCON_DEFAULT	(S3C2410_UFCON_FIFOMODE |	\
+#define SMDK4210_UFCON_DEFAULT	(S3C2410_UFCON_FIFOMODE |	\
 				 S5PV210_UFCON_TXTRIG4 |	\
 				 S5PV210_UFCON_RXTRIG4)
 
@@ -69,30 +69,30 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 	[0] = {
 		.hwport		= 0,
 		.flags		= 0,
-		.ucon		= smdk4210_UCON_DEFAULT,
-		.ulcon		= smdk4210_ULCON_DEFAULT,
-		.ufcon		= smdk4210_UFCON_DEFAULT,
+		.ucon		= SMDK4210_UCON_DEFAULT,
+		.ulcon		= SMDK4210_ULCON_DEFAULT,
+		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
 	[1] = {
 		.hwport		= 1,
 		.flags		= 0,
-		.ucon		= smdk4210_UCON_DEFAULT,
-		.ulcon		= smdk4210_ULCON_DEFAULT,
-		.ufcon		= smdk4210_UFCON_DEFAULT,
+		.ucon		= SMDK4210_UCON_DEFAULT,
+		.ulcon		= SMDK4210_ULCON_DEFAULT,
+		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
 	[2] = {
 		.hwport		= 2,
 		.flags		= 0,
-		.ucon		= smdk4210_UCON_DEFAULT,
-		.ulcon		= smdk4210_ULCON_DEFAULT,
-		.ufcon		= smdk4210_UFCON_DEFAULT,
+		.ucon		= SMDK4210_UCON_DEFAULT,
+		.ulcon		= SMDK4210_ULCON_DEFAULT,
+		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
 	[3] = {
 		.hwport		= 3,
 		.flags		= 0,
-		.ucon		= smdk4210_UCON_DEFAULT,
-		.ulcon		= smdk4210_ULCON_DEFAULT,
-		.ufcon		= smdk4210_UFCON_DEFAULT,
+		.ucon		= SMDK4210_UCON_DEFAULT,
+		.ulcon		= SMDK4210_ULCON_DEFAULT,
+		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
 };
 
