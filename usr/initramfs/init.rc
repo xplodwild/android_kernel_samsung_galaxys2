@@ -35,9 +35,6 @@ loglevel 3
 # but someday that may change.
     symlink /system/vendor /vendor
 
-#add booting sound property
-    setprop audioflinger.bootsnd 1
-
 # Create cgroup mount point for cpu accounting
     mkdir /acct
     mount cgroup none /acct cpuacct
@@ -140,7 +137,7 @@ on post-fs
 
     # We chown/chmod /cache again so because mount is run as root + defaults
     chown system cache /cache
-    chmod 0770 /cache
+    chmod 777 /cache
 
     # This may have been created by the recovery system with odd permissions
     chown system cache /cache/recovery
@@ -162,6 +159,9 @@ on post-fs
     # double check the perms, in case lost+found already exists, and set owner
     chown root root /cache/lost+found
     chmod 0770 /cache/lost+found
+    
+    chown system cache /cache/dalvik-cache
+    chmod 777 /cache/dalvik-cache
 
 on post-fs-data
     # We chown/chmod /data again so because mount is run as root + defaults
@@ -211,17 +211,17 @@ on post-fs-data
     mkdir /data/misc/wifi 0770 wifi wifi
     chmod 0770 /data/misc/wifi
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
-    mkdir /data/local 0777 shell shell
+    mkdir /data/local 777 shell shell
     mkdir /data/local/tmp 0777 shell shell
-    mkdir /data/data 0777 system system
+    mkdir /data/data 777 system system
     mkdir /data/app-private 0777 system system
-    mkdir /data/app 0777 system system
+    mkdir /data/app 777 system system
     mkdir /data/property 0700 root root
 
     # create dalvik-cache and double-check the perms
-    mkdir /data/dalvik-cache 0771 system system
+    mkdir /data/dalvik-cache 777 system system
     chown system system /data/dalvik-cache
-    chmod 0777 /data/dalvik-cache
+    chmod 777 /data/dalvik-cache
 
     # create the lost+found directories, so as to enforce our permissions
     mkdir /data/lost+found 0770
