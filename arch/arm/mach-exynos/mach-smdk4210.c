@@ -18,12 +18,15 @@
 #include <linux/pwm_backlight.h>
 #include <linux/gpio_keys.h>
 #include <linux/i2c.h>
+#include <linux/i2c/atmel_mxt_ts.h>
 #include <linux/regulator/machine.h>
 #include <linux/mfd/max8997.h>
 #include <linux/lcd.h>
 #include <linux/rfkill-gpio.h>
 #include <linux/ath6kl.h>
 #include <linux/delay.h>
+#include <linux/spi/spi.h>
+#include <linux/spi/spi_gpio.h>
 
 #include <asm/mach/arch.h>
 #include <asm/hardware/gic.h>
@@ -45,8 +48,10 @@
 #include <plat/fb.h>
 #include <plat/mfc.h>
 #include <plat/udc-hs.h>
+#include <plat/sysmmu.h>
 
 #include <mach/ohci.h>
+
 #include <mach/map.h>
 
 #include "common.h"
@@ -693,57 +698,162 @@ static struct platform_device smdk4210_device_gpiokeys = {
 	},
 };
 
-static void lcd_hv070wsa_set_power(struct plat_lcd_data *pd, unsigned int power)
+/******************************************************************************
+ * framebuffer
+ *******************************************************************************/
+static void smdk4210_fimd0_gpio_setup(void)
 {
-	int ret;
+	unsigned int reg;
 
-	if (power)
-		ret = gpio_request_one(EXYNOS4_GPE3(4),
-					GPIOF_OUT_INIT_HIGH, "GPE3_4");
-	else
-		ret = gpio_request_one(EXYNOS4_GPE3(4),
-					GPIOF_OUT_INIT_LOW, "GPE3_4");
+	s3c_gpio_cfgrange_nopull(EXYNOS4_GPF0(0), 8, S3C_GPIO_SFN(2));
+	s3c_gpio_cfgrange_nopull(EXYNOS4_GPF1(0), 8, S3C_GPIO_SFN(2));
+	s3c_gpio_cfgrange_nopull(EXYNOS4_GPF2(0), 8, S3C_GPIO_SFN(2));
+	s3c_gpio_cfgrange_nopull(EXYNOS4_GPF3(0), 4, S3C_GPIO_SFN(2));
 
-	gpio_free(EXYNOS4_GPE3(4));
-
-	if (ret)
-		pr_err("failed to request gpio for LCD power: %d\n", ret);
+	/*
+	 * Set DISPLAY_CONTROL register for Display path selection.
+	 *
+	 * DISPLAY_CONTROL[1:0]
+	 * ---------------------
+	 *  00 | MIE
+	 *  01 | MDNIE
+	 *  10 | FIMD
+	 *  11 | FIMD
+	 *  TODO: fix s3c-fb driver to disable MDNIE
+	 */
+	reg = __raw_readl(S3C_VA_SYS + 0x0210);
+	reg &= (1 << 1);
+	reg |= 3;
+	reg &= ~(1 << 13);
+	reg &= ~(3 << 10);
+	reg &= ~(1 << 12);
+	__raw_writel(reg, S3C_VA_SYS + 0x0210);
 }
 
-static struct plat_lcd_data smdk4210_lcd_hv070wsa_data = {
-	.set_power = lcd_hv070wsa_set_power,
-	.min_uV		= 3300000,
-	.max_uV		= 3300000,
-};
-
-static struct platform_device smdk4210_lcd_hv070wsa = {
-	.name			= "platform-lcd",
-	.dev.parent		= &s5p_device_fimd0.dev,
-	.dev.platform_data	= &smdk4210_lcd_hv070wsa_data,
-};
-
-static struct s3c_fb_pd_win smdk4210_fb_win0 = {
+ static struct s3c_fb_pd_win smdk4210_fb_win0 = {
 	.win_mode = {
-		.left_margin	= 64,
-		.right_margin	= 16,
-		.upper_margin	= 64,
-		.lower_margin	= 16,
-		.hsync_len	= 48,
-		.vsync_len	= 3,
-		.xres		= 1024,
-		.yres		= 600,
+		.left_margin	= 16,
+		.right_margin	= 14,
+		.upper_margin	= 4,
+		.lower_margin	= 10,
+		.hsync_len	= 2,
+		.vsync_len	= 2,
+		.xres		= 480,
+		.yres		= 800,
+		.refresh	= 55,
 	},
-	.max_bpp		= 32,
-	.default_bpp		= 24,
+	.max_bpp	= 24,
+	.default_bpp = 16,
+	.virtual_x	= 480,
+	.virtual_y	= 800,
 };
 
-static struct s3c_fb_platdata smdk4210_lcd_pdata __initdata = {
+static struct s3c_fb_platdata smdk4210_fb_pdata __initdata = {
 	.win[0]		= &smdk4210_fb_win0,
-	.vidcon0	= VIDCON0_VIDOUT_RGB | VIDCON0_PNRMODE_RGB,
+	.vidcon0	= VIDCON0_VIDOUT_RGB | VIDCON0_PNRMODE_RGB |
+		VIDCON0_CLKSEL_LCD,
 	.vidcon1	= VIDCON1_INV_HSYNC | VIDCON1_INV_VSYNC |
-				VIDCON1_INV_VCLK,
-	.setup_gpio	= exynos4_fimd0_gpio_setup_24bpp,
+		VIDCON1_INV_VDEN | VIDCON1_INV_VCLK,
+	.setup_gpio	= smdk4210_fimd0_gpio_setup,
 };
+
+static int ld9040_reset(struct lcd_device *ld) {
+	gpio_direction_output(GPIO_LCD_RESET, 0);
+	mdelay(10);
+	gpio_direction_output(GPIO_LCD_RESET, 1);
+	mdelay(10);
+
+	return 0;
+}
+
+static int ld9040_power(struct lcd_device *ld, int enable) {
+	struct regulator *regulator;
+	int rc = 0;
+
+	if (ld == NULL) {
+		printk(KERN_ERR "lcd device object is NULL.\n");
+		rc = -EINVAL;
+		goto fail;
+	}
+
+	regulator = regulator_get(NULL, "vlcd_3.0v");
+	if (IS_ERR(regulator)) {
+		rc = -ENODEV;
+		goto fail;
+	}
+	
+	if (enable) {
+		regulator_enable(regulator);
+	} else {
+		regulator_disable(regulator);
+	}
+	
+	regulator_put(regulator);
+fail:
+	return rc;
+}
+
+static struct lcd_platform_data ld9040_platform_data = {
+	.power_on	= ld9040_power,
+	.reset	= ld9040_reset,
+
+	.lcd_enabled	= 0,
+	.reset_delay	= 20,
+	.power_on_delay	= 50,
+	.power_off_delay	= 300,
+};
+
+static struct spi_gpio_platform_data lcd_spi_gpio_pdata = {
+	.sck	= GPIO_LCD_SPI_SCK,
+	.mosi	= GPIO_LCD_SPI_MOSI,
+	.miso	= SPI_GPIO_NO_MISO,
+	.num_chipselect	= 1,
+};
+
+static struct platform_device lcd_spi_gpio = {
+	.name	= "spi_gpio",
+	.id = 3, ///SDMK4210_SPI_LCD_BUS,
+	.dev = {
+		.platform_data = &lcd_spi_gpio_pdata,
+	}
+};
+
+static struct spi_board_info spi_board_info[] __initdata = {
+	{
+		.modalias = "ld9040",
+		.max_speed_hz	= 1200000,
+		.bus_num	= SMDK4210_SPI_LCD_BUS,
+		.chip_select	= 0,
+		.mode	= SPI_MODE_3,
+		.controller_data = (void*)GPIO_LCD_SPI_CS,
+		.platform_data	= &ld9040_platform_data,
+	}
+};
+
+static void __init ld9040_cfg_gpio(void)
+{
+	s3c_gpio_cfgpin(GPIO_LCD_RESET, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_LCD_RESET, S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_cfgpin(GPIO_LCD_SPI_CS, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_LCD_SPI_CS, S3C_GPIO_PULL_NONE);
+	
+	s3c_gpio_cfgpin(GPIO_LCD_SPI_SCK, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_LCD_SPI_SCK, S3C_GPIO_PULL_NONE);
+	
+	s3c_gpio_cfgpin(GPIO_LCD_SPI_MOSI, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_LCD_SPI_MOSI, S3C_GPIO_PULL_NONE);
+}
+
+static void __init smdk4210_init_fb(void) {
+	if (gpio_request(GPIO_LCD_RESET, "LCD Reset")) {
+		pr_err("%s: failed to request LCD Reset gpio\n", __func__);
+	}
+	ld9040_cfg_gpio();
+	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
+	s5p_fimd0_set_platdata(&smdk4210_fb_pdata);
+}
+
 
 /* Bluetooth rfkill gpio platform data */
 struct rfkill_gpio_platform_data smdk4210_bt_pdata = {
@@ -797,7 +907,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&exynos4_device_pd[PD_GPS],
 	&exynos4_device_pd[PD_MFC],
 	&smdk4210_device_gpiokeys,
-	&smdk4210_lcd_hv070wsa,
+	&lcd_spi_gpio,
 	&smdk4210_leds_gpio,
 	&smdk4210_device_bluetooth,
 	&exynos4_device_tmu,
@@ -854,7 +964,7 @@ static void __init smdk4210_reserve(void)
 static void __init smdk4210_machine_init(void)
 {
 	smdk4210_power_init();
-
+	
 	s3c_i2c0_set_platdata(NULL);
 	i2c_register_board_info(0, i2c0_devs, ARRAY_SIZE(i2c0_devs));
 
@@ -877,7 +987,10 @@ static void __init smdk4210_machine_init(void)
 	s5p_tv_setup();
 	s5p_i2c_hdmiphy_set_platdata(NULL);
 
-	s5p_fimd0_set_platdata(&smdk4210_lcd_pdata);
+	//s5p_fimd0_set_platdata(&smdk4210_lcd_pdata);
+	
+	smdk4210_init_fb();
+
 
 	platform_add_devices(smdk4210_devices, ARRAY_SIZE(smdk4210_devices));
 
