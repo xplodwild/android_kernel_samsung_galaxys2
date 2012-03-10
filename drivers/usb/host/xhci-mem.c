@@ -875,6 +875,7 @@ int xhci_setup_addressable_virt_dev(struct xhci_hcd *xhci, struct usb_device *ud
 	struct xhci_virt_device *dev;
 	struct xhci_ep_ctx	*ep0_ctx;
 	struct xhci_slot_ctx    *slot_ctx;
+	struct xhci_input_control_ctx *ctrl_ctx;
 	u32			port_num;
 	struct usb_device *top_dev;
 
@@ -886,7 +887,11 @@ int xhci_setup_addressable_virt_dev(struct xhci_hcd *xhci, struct usb_device *ud
 		return -EINVAL;
 	}
 	ep0_ctx = xhci_get_ep_ctx(xhci, dev->in_ctx, 0);
+	ctrl_ctx = xhci_get_input_control_ctx(xhci, dev->in_ctx);
 	slot_ctx = xhci_get_slot_ctx(xhci, dev->in_ctx);
+
+	/* 2) New slot context and endpoint 0 context are valid*/
+	ctrl_ctx->add_flags = cpu_to_le32(SLOT_FLAG | EP0_FLAG);
 
 	/* 3) Only the control endpoint is valid - one endpoint context */
 	slot_ctx->dev_info |= cpu_to_le32(LAST_CTX(1) | (u32) udev->route);
@@ -1002,40 +1007,24 @@ static unsigned int xhci_parse_exponent_interval(struct usb_device *udev,
 }
 
 /*
- * Convert bInterval expressed in microframes (in 1-255 range) to exponent of
+ * Convert bInterval expressed in frames (in 1-255 range) to exponent of
  * microframes, rounded down to nearest power of 2.
  */
-static unsigned int xhci_microframes_to_exponent(struct usb_device *udev,
-		struct usb_host_endpoint *ep, unsigned int desc_interval,
-		unsigned int min_exponent, unsigned int max_exponent)
+static unsigned int xhci_parse_frame_interval(struct usb_device *udev,
+		struct usb_host_endpoint *ep)
 {
 	unsigned int interval;
 
-	interval = fls(desc_interval) - 1;
-	interval = clamp_val(interval, min_exponent, max_exponent);
-	if ((1 << interval) != desc_interval)
+	interval = fls(8 * ep->desc.bInterval) - 1;
+	interval = clamp_val(interval, 3, 10);
+	if ((1 << interval) != 8 * ep->desc.bInterval)
 		dev_warn(&udev->dev,
 			 "ep %#x - rounding interval to %d microframes, ep desc says %d microframes\n",
 			 ep->desc.bEndpointAddress,
 			 1 << interval,
-			 desc_interval);
+			 8 * ep->desc.bInterval);
 
 	return interval;
-}
-
-static unsigned int xhci_parse_microframe_interval(struct usb_device *udev,
-		struct usb_host_endpoint *ep)
-{
-	return xhci_microframes_to_exponent(udev, ep,
-			ep->desc.bInterval, 0, 15);
-}
-
-
-static unsigned int xhci_parse_frame_interval(struct usb_device *udev,
-		struct usb_host_endpoint *ep)
-{
-	return xhci_microframes_to_exponent(udev, ep,
-			ep->desc.bInterval * 8, 3, 10);
 }
 
 /* Return the polling or NAK interval.
@@ -1056,7 +1045,7 @@ static unsigned int xhci_get_endpoint_interval(struct usb_device *udev,
 		/* Max NAK rate */
 		if (usb_endpoint_xfer_control(&ep->desc) ||
 		    usb_endpoint_xfer_bulk(&ep->desc)) {
-			interval = xhci_parse_microframe_interval(udev, ep);
+			interval = ep->desc.bInterval;
 			break;
 		}
 		/* Fall through - SS and HS isoc/int have same decoding */

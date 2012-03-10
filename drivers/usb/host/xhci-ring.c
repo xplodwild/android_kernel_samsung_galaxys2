@@ -819,24 +819,23 @@ void xhci_stop_endpoint_command_watchdog(unsigned long arg)
 	struct xhci_ring *ring;
 	struct xhci_td *cur_td;
 	int ret, i, j;
-	unsigned long flags;
 
 	ep = (struct xhci_virt_ep *) arg;
 	xhci = ep->xhci;
 
-	spin_lock_irqsave(&xhci->lock, flags);
+	spin_lock(&xhci->lock);
 
 	ep->stop_cmds_pending--;
 	if (xhci->xhc_state & XHCI_STATE_DYING) {
 		xhci_dbg(xhci, "Stop EP timer ran, but another timer marked "
 				"xHCI as DYING, exiting.\n");
-		spin_unlock_irqrestore(&xhci->lock, flags);
+		spin_unlock(&xhci->lock);
 		return;
 	}
 	if (!(ep->stop_cmds_pending == 0 && (ep->ep_state & EP_HALT_PENDING))) {
 		xhci_dbg(xhci, "Stop EP timer ran, but no command pending, "
 				"exiting.\n");
-		spin_unlock_irqrestore(&xhci->lock, flags);
+		spin_unlock(&xhci->lock);
 		return;
 	}
 
@@ -848,11 +847,11 @@ void xhci_stop_endpoint_command_watchdog(unsigned long arg)
 	xhci->xhc_state |= XHCI_STATE_DYING;
 	/* Disable interrupts from the host controller and start halting it */
 	xhci_quiesce(xhci);
-	spin_unlock_irqrestore(&xhci->lock, flags);
+	spin_unlock(&xhci->lock);
 
 	ret = xhci_halt(xhci);
 
-	spin_lock_irqsave(&xhci->lock, flags);
+	spin_lock(&xhci->lock);
 	if (ret < 0) {
 		/* This is bad; the host is not responding to commands and it's
 		 * not allowing itself to be halted.  At least interrupts are
@@ -900,7 +899,7 @@ void xhci_stop_endpoint_command_watchdog(unsigned long arg)
 			}
 		}
 	}
-	spin_unlock_irqrestore(&xhci->lock, flags);
+	spin_unlock(&xhci->lock);
 	xhci_dbg(xhci, "Calling usb_hc_died()\n");
 	usb_hc_died(xhci_to_hcd(xhci)->primary_hcd);
 	xhci_dbg(xhci, "xHCI host controller is dead.\n");
@@ -1218,7 +1217,6 @@ static void handle_vendor_event(struct xhci_hcd *xhci,
  *
  * Returns a zero-based port number, which is suitable for indexing into each of
  * the split roothubs' port arrays and bus state arrays.
- * Add one to it in order to call xhci_find_slot_id_by_port.
  */
 static unsigned int find_faked_portnum_from_hw_portnum(struct usb_hcd *hcd,
 		struct xhci_hcd *xhci, u32 port_id)
@@ -1341,7 +1339,7 @@ static void handle_port_status(struct xhci_hcd *xhci,
 			temp |= PORT_LINK_STROBE | XDEV_U0;
 			xhci_writel(xhci, temp, port_array[faked_port_index]);
 			slot_id = xhci_find_slot_id_by_port(hcd, xhci,
-					faked_port_index + 1);
+					faked_port_index);
 			if (!slot_id) {
 				xhci_dbg(xhci, "slot_id is zero\n");
 				goto cleanup;
@@ -2571,7 +2569,7 @@ static unsigned int count_sg_trbs_needed(struct xhci_hcd *xhci, struct urb *urb)
 	struct scatterlist *sg;
 
 	sg = NULL;
-	num_sgs = urb->num_mapped_sgs;
+	num_sgs = urb->num_sgs;
 	temp = urb->transfer_buffer_length;
 
 	xhci_dbg(xhci, "count sg list trbs: \n");
@@ -2755,7 +2753,7 @@ static int queue_bulk_sg_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		return -EINVAL;
 
 	num_trbs = count_sg_trbs_needed(xhci, urb);
-	num_sgs = urb->num_mapped_sgs;
+	num_sgs = urb->num_sgs;
 	total_packet_count = roundup(urb->transfer_buffer_length,
 			le16_to_cpu(urb->ep->desc.wMaxPacketSize));
 
@@ -3382,8 +3380,7 @@ static int xhci_queue_isoc_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		/* Check TD length */
 		if (running_total != td_len) {
 			xhci_err(xhci, "ISOC TD length unmatch\n");
-			ret = -EINVAL;
-			goto cleanup;
+			return -EINVAL;
 		}
 	}
 
