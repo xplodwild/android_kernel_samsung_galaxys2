@@ -192,6 +192,7 @@ int __init s5p_register_gpio_interrupt(int pin)
 	return ret;
 }
 
+#ifndef  s5p_register_gpioint_bank(chain_irq, start, nr_groups)
 int __init s5p_register_gpioint_bank(int chain_irq, int start, int nr_groups)
 {
 	struct s5p_gpioint_bank *bank;
@@ -207,3 +208,4 @@ int __init s5p_register_gpioint_bank(int chain_irq, int start, int nr_groups)
 	list_add_tail(&bank->list, &banks);
 	return 0;
 }
+#endif

@@ -527,6 +527,8 @@ static void p54spi_work(struct work_struct *work)
 	ret = p54spi_wq_tx(priv);
 out:
 	mutex_unlock(&priv->mutex);
+
+	cancel_work_sync(&priv->work);
 }
 
 static int p54spi_op_start(struct ieee80211_hw *dev)

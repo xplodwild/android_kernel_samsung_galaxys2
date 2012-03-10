@@ -745,6 +745,8 @@ static void __cpuinit put_core_offline(unsigned int cpu)
 		return;
 
 	pdata = platform_get_drvdata(pdev);
+	if (!pdata)
+		return;
 
 	indx = TO_ATTR_NO(cpu);
 

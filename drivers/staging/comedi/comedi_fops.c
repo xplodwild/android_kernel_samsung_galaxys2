@@ -1400,6 +1400,15 @@ static int do_poll_ioctl(struct comedi_device *dev, unsigned int arg,
 			 void *file)
 {
 	struct comedi_subdevice *s;
+	struct comedi_device_file_info *dev_file_info;
+	struct comedi_device *dev;
+
+	dev_file_info = comedi_get_device_file_info(minor);
+	if (dev_file_info == NULL)
+	        return -ENODEV;
+	dev = dev_file_info->device;
+	if (dev == NULL)
+	        return -ENODEV;
 
 	if (arg >= dev->n_subdevices)
 		return -EINVAL;

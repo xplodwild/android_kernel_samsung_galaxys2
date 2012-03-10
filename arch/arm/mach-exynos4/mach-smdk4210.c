@@ -117,59 +117,26 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 	},
 };
 /* TSP */
-static u8 mxt_init_vals[] = {
-	/* MXT_GEN_COMMAND(6) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	/* MXT_GEN_POWER(7) */
-	0x20, 0xff, 0x32,
-	/* MXT_GEN_ACQUIRE(8) */
-	0x0a, 0x00, 0x05, 0x00, 0x00, 0x00, 0x09, 0x23,
-	/* MXT_TOUCH_MULTI(9) */
-	0x00, 0x00, 0x00, 0x13, 0x0b, 0x00, 0x00, 0x00, 0x02, 0x00,
-	0x00, 0x01, 0x01, 0x0e, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00,
-	/* MXT_TOUCH_KEYARRAY(15) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00,
-	0x00,
-	/* MXT_SPT_GPIOPWM(19) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	/* MXT_PROCI_GRIPFACE(20) */
-	0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50, 0x28, 0x04,
-	0x0f, 0x0a,
-	/* MXT_PROCG_NOISE(22) */
-	0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x23, 0x00,
-	0x00, 0x05, 0x0f, 0x19, 0x23, 0x2d, 0x03,
-	/* MXT_TOUCH_PROXIMITY(23) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00,
-	/* MXT_PROCI_ONETOUCH(24) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	/* MXT_SPT_SELFTEST(25) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00,
-	/* MXT_PROCI_TWOTOUCH(27) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	/* MXT_SPT_CTECONFIG(28) */
-	0x00, 0x00, 0x02, 0x08, 0x10, 0x00,
-};
-
 static struct mxt_platform_data mxt_pdata = {
-	.config			= mxt_init_vals,
-	.config_length		= ARRAY_SIZE(mxt_init_vals),
-
 	.x_line			= 18,
 	.y_line			= 11,
 	.x_size			= 480,
 	.y_size			= 800,
-	.blen			= 0x0,
+	.blen			= 0x11,
 	.threshold		= 0x18,
 	.voltage		= 2800000,		/* 2.8V */
 	.orient			= MXT_DIAGONAL,
 	.irqflags		= IRQF_TRIGGER_FALLING,
 };
+
+static struct i2c_board_info i2c_devs3[] __initdata = {
+	{
+		I2C_BOARD_INFO("atmel_mxt_ts", 0x4a),
+		.platform_data = &mxt_pdata,
+		.irq		= IRQ_EINT(4),
+	},
+};
+
 
 /* MAX17042 */
 static struct max17042_platform_data max17042_pdata = {
@@ -203,12 +170,7 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 /* To Do */
 
 /* I2C3 */
-static struct i2c_board_info i2c_devs3[] __initdata = {
-	{
-		I2C_BOARD_INFO("atmel_mxt_ts", 0x4a),
-		.platform_data = &mxt_pdata,
-	},
-};
+
 
 /* I2C5 */
 static struct i2c_board_info i2c_devs5[] __initdata = {
@@ -279,6 +241,28 @@ static struct s3c_mshci_platdata smdk4210_mshc_pdata __initdata = {
 	.max_width					= 8,
 	.host_caps					= MMC_CAP_8_BIT_DATA | MMC_CAP_1_8V_DDR,
 };
+
+
+static struct s3c2410_platform_i2c i2c3_data __initdata = {
+	.flags		= 0,
+	.bus_num	= 3,
+	.slave_addr	= 0x10,
+	.frequency	= 400 * 1000,
+	.sda_delay	= 100,
+};
+
+static void __init smdk4210_init_tsp(void) {
+	gpio_request(GPIO_TSP_INT, "TOUCH_INT");
+	s5p_register_gpio_interrupt(GPIO_TSP_INT);
+	s3c_gpio_cfgpin(GPIO_TSP_INT, S3C_GPIO_SFN(0xf));
+	s3c_gpio_setpull(GPIO_TSP_INT, S3C_GPIO_PULL_UP);
+	i2c_devs3[0].irq = gpio_to_irq(GPIO_TSP_INT);
+	gpio_request(GPIO_TSP_LDO_ON, "TOUCH_LDO");
+	s3c_gpio_cfgpin(GPIO_TSP_LDO_ON, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_TSP_LDO_ON, S3C_GPIO_PULL_NONE);
+	gpio_direction_output(GPIO_TSP_LDO_ON, 1);
+	msleep(100);
+}
 
 /*
  * WLAN: SDIO Host will call this func at booting time
@@ -858,6 +842,8 @@ static void __init smdk4210_machine_init(void)
 	
 	s3c_pm_init();
 	
+	smdk4210_init_tsp();
+	
 	exynos4_pd_enable(&exynos4_device_pd[PD_MFC].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_G3D].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_LCD0].dev);
@@ -902,7 +888,7 @@ static void __init smdk4210_machine_init(void)
 	smdk4210_tsp_init();
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
-	s3c_i2c3_set_platdata(NULL);
+	s3c_i2c3_set_platdata(&i2c3_data);
 	s3c_i2c5_set_platdata(NULL);
 	s3c_i2c6_set_platdata(NULL);
 	s3c_i2c7_set_platdata(NULL);
