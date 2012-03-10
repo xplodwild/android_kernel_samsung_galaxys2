@@ -1370,6 +1370,10 @@ static void __init smdk4210_machine_init(void)
 	smdk4210_power_init();
 	smdk4210_config_gpio_table();
 	
+	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
+	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
+	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
+	
 	s3c_i2c0_set_platdata(NULL);
 	i2c_register_board_info(0, i2c0_devs, ARRAY_SIZE(i2c0_devs));
 
@@ -1387,10 +1391,7 @@ static void __init smdk4210_machine_init(void)
 	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS1) & 0xfff0fff0)
          | 0x90009, S5P_CLKDIV_FSYS1);
 
-	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
-	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
-	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
-	
+		
 	smdk4210_ehci_init();
 	smdk4210_ohci_init();
 	s3c_hsotg_set_platdata(&smdk4210_hsotg_pdata);

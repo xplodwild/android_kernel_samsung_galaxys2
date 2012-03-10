@@ -553,7 +553,7 @@ CONFIG_ALIGNMENT_TRAP=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
-CONFIG_CMDLINE="lpj=3981312 root=/dev/mmcblk1p2 rootwait --no-log"
+CONFIG_CMDLINE=" rootwait --no-log s3cfb.bootloaderfb=0x5ec00000 ld9040.get_lcdtype=0x0 lpj=3981312 vmalloc=144m"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
