@@ -434,6 +434,7 @@ void r100_hpd_init(struct radeon_device *rdev)
 		default:
 			break;
 		}
+		radeon_hpd_set_polarity(rdev, radeon_connector->hpd.hpd);
 	}
 	if (rdev->irq.installed)
 		r100_irq_set(rdev);
@@ -773,8 +774,8 @@ int r100_copy_blit(struct radeon_device *rdev,
 		radeon_ring_write(rdev, (0x1fff) | (0x1fff << 16));
 		radeon_ring_write(rdev, 0);
 		radeon_ring_write(rdev, (0x1fff) | (0x1fff << 16));
-		radeon_ring_write(rdev, num_pages);
-		radeon_ring_write(rdev, num_pages);
+		radeon_ring_write(rdev, num_gpu_pages);
+		radeon_ring_write(rdev, num_gpu_pages);
 		radeon_ring_write(rdev, cur_pages | (stride_pixels << 16));
 	}
 	radeon_ring_write(rdev, PACKET0(RADEON_DSTCACHE_CTLSTAT, 0));
