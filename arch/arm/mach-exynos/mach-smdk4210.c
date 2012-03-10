@@ -51,7 +51,7 @@
 #include <plat/sysmmu.h>
 
 #include <mach/ohci.h>
-
+#include <mach/regs-clock.h>
 #include <mach/map.h>
 
 #include "common.h"
@@ -494,12 +494,38 @@ static struct i2c_board_info i2c1_devs[] __initdata = {
 	},
 };
 
+/******************************************************************************
+ * sdhci
+ ******************************************************************************/
 static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
-	.cd_type		= S3C_SDHCI_CD_INTERNAL,
+	.max_width		= 8,
+	.host_caps		= (MMC_CAP_8_BIT_DATA | MMC_CAP_4_BIT_DATA |
+				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED |
+				MMC_CAP_DISABLE | MMC_CAP_ERASE),
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
+	//.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.cfg_gpio = exynos4_setup_sdhci0_cfg_gpio,
 };
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc2_pdata __initdata = {
-	.cd_type		= S3C_SDHCI_CD_INTERNAL,
+	.cd_type		= S3C_SDHCI_CD_GPIO,
+	//.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.ext_cd_gpio	= GPIO_HSMMC2_CD,
+	.ext_cd_gpio_invert = 1,
+	.host_caps = MMC_CAP_4_BIT_DATA |
+				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED |
+				MMC_CAP_DISABLE,
+	.max_width		= 4,
+	.cfg_gpio = exynos4_setup_sdhci2_cfg_gpio,
+};
+
+static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
+	//.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.max_width		= 4,
+	.host_caps		= MMC_CAP_4_BIT_DATA |
+				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
+	.cfg_gpio = exynos4_setup_sdhci3_cfg_gpio,
 };
 
 
@@ -510,13 +536,13 @@ static int smdk4210_wifi_status_register(void (*notify_func)
 		(struct platform_device *, int state));
 
 /* WLAN: MMC3-SDIO */
-static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
+/*static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
 	.max_width		= 4,
 	.host_caps		= MMC_CAP_4_BIT_DATA |
 			MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
 	.cd_type		= S3C_SDHCI_CD_EXTERNAL,
 	.ext_cd_init		= smdk4210_wifi_status_register,
-};
+};*/
 
 /*
  * WLAN: Save SDIO Card detect func into this pointer
@@ -642,61 +668,438 @@ static struct platform_device smdk4210_leds_gpio = {
 	},
 };
 
-static struct gpio_keys_button smdk4210_gpio_keys_table[] = {
+/******************************************************************************
+ * gpio keys
+ ******************************************************************************/
+static struct gpio_keys_button smdk4210_gpio_keys[] = {
 	{
-		.code			= KEY_MENU,
-		.gpio			= EXYNOS4_GPX1(5),
-		.desc			= "gpio-keys: KEY_MENU",
-		.type			= EV_KEY,
-		.active_low		= 1,
-		.wakeup			= 1,
-		.debounce_interval	= 1,
+		.code = KEY_VOLUMEUP,
+		.gpio = GPIO_VOL_UP,
+		.active_low = 1,
+		.type = EV_KEY,
+		.wakeup = 1,
+		.can_disable = 1,
 	}, {
-		.code			= KEY_HOME,
-		.gpio			= EXYNOS4_GPX1(6),
-		.desc			= "gpio-keys: KEY_HOME",
-		.type			= EV_KEY,
-		.active_low		= 1,
-		.wakeup			= 1,
-		.debounce_interval	= 1,
+		.code = KEY_VOLUMEDOWN,
+		.gpio = GPIO_VOL_DOWN,
+		.active_low = 1,
+		.type = EV_KEY,
+		.wakeup = 1,
+		.can_disable = 1,
 	}, {
-		.code			= KEY_BACK,
-		.gpio			= EXYNOS4_GPX1(7),
-		.desc			= "gpio-keys: KEY_BACK",
-		.type			= EV_KEY,
-		.active_low		= 1,
-		.wakeup			= 1,
-		.debounce_interval	= 1,
+		.code = KEY_POWER,
+		.gpio = GPIO_nPOWER,
+		.active_low = 1,
+		.type = EV_KEY,
+		.wakeup = 1,
 	}, {
-		.code			= KEY_UP,
-		.gpio			= EXYNOS4_GPX2(0),
-		.desc			= "gpio-keys: KEY_UP",
-		.type			= EV_KEY,
-		.active_low		= 1,
-		.wakeup			= 1,
-		.debounce_interval	= 1,
-	}, {
-		.code			= KEY_DOWN,
-		.gpio			= EXYNOS4_GPX2(1),
-		.desc			= "gpio-keys: KEY_DOWN",
-		.type			= EV_KEY,
-		.active_low		= 1,
-		.wakeup			= 1,
-		.debounce_interval	= 1,
-	},
+		.code = KEY_HOME,
+		.gpio = GPIO_OK_KEY,
+		.active_low = 1,
+		.type = EV_KEY,
+		.wakeup = 1,
+	}
 };
 
 static struct gpio_keys_platform_data smdk4210_gpio_keys_data = {
-	.buttons	= smdk4210_gpio_keys_table,
-	.nbuttons	= ARRAY_SIZE(smdk4210_gpio_keys_table),
+	.buttons	= smdk4210_gpio_keys,
+	.nbuttons	= ARRAY_SIZE(smdk4210_gpio_keys),
 };
 
-static struct platform_device smdk4210_device_gpiokeys = {
+static struct platform_device smdk4210_device_gpio_keys = {
 	.name		= "gpio-keys",
 	.dev		= {
 		.platform_data	= &smdk4210_gpio_keys_data,
 	},
 };
+
+/******************************************************************************
+ * gpio table
+ ******************************************************************************/
+typedef enum {
+	SGS_GPIO_SETPIN_ZERO,
+	SGS_GPIO_SETPIN_ONE,
+	SGS_GPIO_SETPIN_NONE
+} sgs_gpio_initval;
+
+static struct {
+	unsigned int num;
+	unsigned int cfg;
+	sgs_gpio_initval val;
+	samsung_gpio_pull_t pull;
+	s5p_gpio_drvstr_t drv;
+} smdk4210_init_gpios[] = {
+	{
+		.num	= GPIO_FM_RST,
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	 {
+		.num	= GPIO_TDMB_RST_N,
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPC1(3),	/* CODEC_SDA_1.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPC1(4),	/* CODEC_SCL_1.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPD0(2),	/* MSENSOR_MHL_SDA_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPD0(3),	/* MSENSOR_MHL_SCL_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPD1(0),	/* 8M_CAM_SDA_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPD1(1),	/* 8M_CAM_SCL_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPD1(2),	/* SENSE_SDA_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPD1(3),	/* SENSE_SCL_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPK1(1),
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV2,
+	}, {
+		.num	= EXYNOS4_GPK2(2),	/* PS_ALS_SDA_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPK3(1),	/* WLAN_SDIO_CMD */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPK3(2),	/* PS_ALS_SCL_2.8V */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPK3(3),	/* WLAN_SDIO_D(0) */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPK3(4),	/* WLAN_SDIO_D(1) */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPK3(5),	/* WLAN_SDIO_D(2) */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPK3(6),	/* WLAN_SDIO_D(3) */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPX0(1),	/* VOL_UP */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPX0(2),	/* VOL_DOWN */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPX0(3),	/* GPIO_BOOT_MODE */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPX2(3),	/* GPIO_FUEL_ALERT */
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPX3(1),
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPX3(2),	/* GPIO_DET_35 */
+		.cfg	= S3C_GPIO_SFN(GPIO_DET_35_AF),
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPX3(3),
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPX3(4),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_NONE,
+		.pull	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{	/*GPY0 */
+		.num	= EXYNOS4_GPY0(2),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY0(3),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY0(4),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY0(5),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{	/*GPY1 */
+		.num	= EXYNOS4_GPY1(0),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY1(1),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+	{
+		.num	= EXYNOS4_GPY1(2),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY1(3),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {	/*GPY2 */
+		.num	= EXYNOS4_GPY2(0),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY2(1),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY2(2),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY2(3),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY2(4),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY2(5),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {	/*GPY4 */
+		.num	= EXYNOS4_GPY4(4),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {	/*GPY5 */
+		.num	= EXYNOS4_GPY5(0),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(1),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(2),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(3),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(4),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(5),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(6),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY5(7),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {	/* GPY6 */
+		.num	= EXYNOS4_GPY6(0),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(1),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(2),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(3),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(4),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(5),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(6),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	}, {
+		.num	= EXYNOS4_GPY6(7),
+		.cfg	= S3C_GPIO_INPUT,
+		.val	= SGS_GPIO_SETPIN_ZERO,
+		.pull	= S3C_GPIO_PULL_DOWN,
+		.drv	= S5P_GPIO_DRVSTR_LV1,
+	},
+};
+
+static void smdk4210_config_gpio_table(void)
+{
+	u32 i, gpio;
+
+	for (i = 0; i < ARRAY_SIZE(smdk4210_init_gpios); i++) {
+		gpio = smdk4210_init_gpios[i].num;
+		s3c_gpio_cfgpin(gpio, smdk4210_init_gpios[i].cfg);
+		s3c_gpio_setpull(gpio, smdk4210_init_gpios[i].pull);
+
+		if (smdk4210_init_gpios[i].val != SGS_GPIO_SETPIN_NONE)
+			gpio_set_value(gpio, smdk4210_init_gpios[i].val);
+
+		s5p_gpio_set_drvstr(gpio, smdk4210_init_gpios[i].drv);
+	}
+}
+
 
 /******************************************************************************
  * framebuffer
@@ -873,14 +1276,15 @@ static struct platform_device smdk4210_device_bluetooth = {
 };
 
 static struct platform_device *smdk4210_devices[] __initdata = {
-	&s3c_device_hsmmc2,
-	&s3c_device_hsmmc0,
-	&s3c_device_hsmmc3,
+	&exynos4_device_sysmmu,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
 	&s3c_device_rtc,
 	&s3c_device_wdt,
 	&s3c_device_usb_hsotg,
+	&s3c_device_hsmmc0,
+	&s3c_device_hsmmc2,
+	&s3c_device_hsmmc3,
 	&s5p_device_ehci,
 	&s5p_device_fimc0,
 	&s5p_device_fimc1,
@@ -906,7 +1310,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&exynos4_device_pd[PD_CAM],
 	&exynos4_device_pd[PD_GPS],
 	&exynos4_device_pd[PD_MFC],
-	&smdk4210_device_gpiokeys,
+	&smdk4210_device_gpio_keys,
 	&lcd_spi_gpio,
 	&smdk4210_leds_gpio,
 	&smdk4210_device_bluetooth,
@@ -964,21 +1368,29 @@ static void __init smdk4210_reserve(void)
 static void __init smdk4210_machine_init(void)
 {
 	smdk4210_power_init();
+	smdk4210_config_gpio_table();
 	
 	s3c_i2c0_set_platdata(NULL);
 	i2c_register_board_info(0, i2c0_devs, ARRAY_SIZE(i2c0_devs));
 
 	s3c_i2c1_set_platdata(NULL);
 	i2c_register_board_info(1, i2c1_devs, ARRAY_SIZE(i2c1_devs));
+	
+	s3c_gpio_cfgpin(GPIO_MASSMEM_EN, S3C_GPIO_OUTPUT);
+	gpio_set_value(GPIO_MASSMEM_EN, GPIO_MASSMEM_EN_LEVEL);
 
-	/*
-	 * Since sdhci instance 2 can contain a bootable media,
-	 * sdhci instance 0 is registered after instance 2.
-	 */
-	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
+	/* 400 kHz for initialization of MMC Card  */
+	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS3) & 0xfffffff0)
+         | 0x9, S5P_CLKDIV_FSYS3);
+	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS2) & 0xfff0fff0)
+         | 0x80008, S5P_CLKDIV_FSYS2);
+	__raw_writel((__raw_readl(S5P_CLKDIV_FSYS1) & 0xfff0fff0)
+         | 0x90009, S5P_CLKDIV_FSYS1);
+
 	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
+	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
 	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
-
+	
 	smdk4210_ehci_init();
 	smdk4210_ohci_init();
 	s3c_hsotg_set_platdata(&smdk4210_hsotg_pdata);
