@@ -70,6 +70,14 @@ struct max8922_platform_data {
 extern void c1_config_gpio_table(void);
 extern void c1_config_sleep_gpio_table(void);
 
+enum i2c_bus_ids {
+	I2C_GPIO_BUS_TOUCHKEY = 10,
+	I2C_GPIO_BUS_PROX = 11,
+	I2C_GPIO_BUS_GAUGE,
+	I2C_GPIO_BUS_USB,
+	I2C_GPIO_BUS_MHL,
+	I2C_GPIO_BUS_FM,
+};
 
 
 /* Following are default values for UCON, ULCON and UFCON UART registers */
@@ -116,7 +124,11 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
 		.ufcon		= SMDK4210_UFCON_DEFAULT,
 	},
 };
-/* TSP */
+
+
+/*********** 
+ * TSP 
+ */
 static struct mxt_platform_data mxt_pdata = {
 	.x_line			= 18,
 	.y_line			= 11,
@@ -137,11 +149,92 @@ static struct i2c_board_info i2c_devs3[] __initdata = {
 	},
 };
 
+static void __init smdk4210_init_tsp(void) {
+	gpio_request(GPIO_TSP_INT, "TOUCH_INT");
+	s5p_register_gpio_interrupt(GPIO_TSP_INT);
+	s3c_gpio_cfgpin(GPIO_TSP_INT, S3C_GPIO_SFN(0xf));
+	s3c_gpio_setpull(GPIO_TSP_INT, S3C_GPIO_PULL_UP);
+	i2c_devs3[0].irq = gpio_to_irq(GPIO_TSP_INT);
+	gpio_request(GPIO_TSP_LDO_ON, "TOUCH_LDO");
+	s3c_gpio_cfgpin(GPIO_TSP_LDO_ON, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_TSP_LDO_ON, S3C_GPIO_PULL_NONE);
+	gpio_direction_output(GPIO_TSP_LDO_ON, 1);
+	msleep(100);
+}
 
-/* MAX17042 */
-static struct max17042_platform_data max17042_pdata = {
-	.enable_current_sense = false,
+
+/******
+ * MAX17042 
+ */
+static struct i2c_gpio_platform_data i2c_gpio_gauge_data = {
+	.sda_pin	= GPIO_FUEL_SDA,
+	.scl_pin	= GPIO_FUEL_SCL,
 };
+
+struct platform_device i2c_gpio_gauge = {
+	.name = "i2c-gpio",
+	.id = I2C_GPIO_BUS_GAUGE,
+	.dev.platform_data = &i2c_gpio_gauge_data,
+};
+
+static struct max17042_reg_data smdk4210_max17042_regs[] = {
+	{
+		.addr = MAX17042_CGAIN,
+		.data = 0,
+	},
+	{
+		.addr = MAX17042_MiscCFG,
+		.data = 0x0003,
+	},
+	{
+		.addr = MAX17042_LearnCFG,
+		.data = 0x0007,
+	},
+	{
+		.addr = MAX17042_RCOMP0,
+		.data = 0x0050,
+	},
+	{
+		.addr = MAX17042_SALRT_Th,
+		.data = 0xff02,
+	},
+	{
+		.addr = MAX17042_VALRT_Th,
+		.data = 0xff00,
+	},
+	{
+		.addr = MAX17042_TALRT_Th,
+		.data = 0x7f80,
+	}
+};
+
+static struct max17042_platform_data smdk4210_max17042_data = {
+	.init_data = smdk4210_max17042_regs,
+	.num_init_data = ARRAY_SIZE(smdk4210_max17042_regs),
+};
+
+static struct i2c_board_info i2c_gpio_gauge_devs[] __initdata = {
+	{
+		I2C_BOARD_INFO("max17042", 0x36),
+		.platform_data = &smdk4210_max17042_data,
+	},
+};
+
+static void __init smdk4210_init_battery_gauge(void)
+{
+	gpio_request(GPIO_FUEL_ALERT, "FUEL_ALERT");
+	s5p_register_gpio_interrupt(GPIO_FUEL_ALERT);
+	s3c_gpio_cfgpin(GPIO_FUEL_ALERT, S3C_GPIO_SFN(0xf));
+	s3c_gpio_setpull(GPIO_FUEL_ALERT, S3C_GPIO_PULL_UP);
+	i2c_gpio_gauge_devs[0].irq = gpio_to_irq(GPIO_FUEL_ALERT);
+	
+	i2c_register_board_info(I2C_GPIO_BUS_GAUGE,
+		i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
+}
+
+/******
+ * MAX8997 
+ */
 
 extern struct max8997_platform_data max8997_pdata;
 
@@ -193,26 +286,9 @@ static struct i2c_board_info i2c_devs7[] __initdata = {
 
 /* I2C9 */
 
-static struct i2c_gpio_platform_data i2c9_gpio_data = {
-	.sda_pin = GPIO_FUEL_SDA,
-	.scl_pin = GPIO_FUEL_SCL,
-};
-static struct platform_device exynos4_device_i2c9 = {
-	.name = "i2c_gpio",
-	.id = 0,
-	.dev = {
-		.platform_data = &i2c9_gpio_data,
-	},
-};
-
-static struct i2c_board_info i2c_devs9_emul[] __initdata = {
-	{
-		I2C_BOARD_INFO("max17042", 0x36),
-		.platform_data = &max17042_pdata,
-		.irq = IRQ_EINT(19),
-	},
-};
-
+/******
+ * HSMMC def
+ */
 static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
         .cd_type                = S3C_SDHCI_CD_PERMANENT,
         .clk_type               = S3C_SDHCI_CLK_DIV_EXTERNAL,
@@ -250,111 +326,6 @@ static struct s3c2410_platform_i2c i2c3_data __initdata = {
 	.frequency	= 400 * 1000,
 	.sda_delay	= 100,
 };
-
-static void __init smdk4210_init_tsp(void) {
-	gpio_request(GPIO_TSP_INT, "TOUCH_INT");
-	s5p_register_gpio_interrupt(GPIO_TSP_INT);
-	s3c_gpio_cfgpin(GPIO_TSP_INT, S3C_GPIO_SFN(0xf));
-	s3c_gpio_setpull(GPIO_TSP_INT, S3C_GPIO_PULL_UP);
-	i2c_devs3[0].irq = gpio_to_irq(GPIO_TSP_INT);
-	gpio_request(GPIO_TSP_LDO_ON, "TOUCH_LDO");
-	s3c_gpio_cfgpin(GPIO_TSP_LDO_ON, S3C_GPIO_OUTPUT);
-	s3c_gpio_setpull(GPIO_TSP_LDO_ON, S3C_GPIO_PULL_NONE);
-	gpio_direction_output(GPIO_TSP_LDO_ON, 1);
-	msleep(100);
-}
-
-/*
- * WLAN: SDIO Host will call this func at booting time
- * !!!! REMOVE ME: Origen stuff, unrelated to GalaxyS2
-
- */
-static int smdk4210_wifi_status_register(void (*notify_func)
-		(struct platform_device *, int state));
-
-/* WLAN: MMC3-SDIO */
-/*
-
-!!!! REMOVE ME: Origen stuff, unrelated to GalaxyS2
-static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
-	.max_width		= 4,
-	.host_caps		= MMC_CAP_4_BIT_DATA |
-			MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
-	.cd_type		= S3C_SDHCI_CD_PERMANENT,
-	.ext_cd_init		= smdk4210_wifi_status_register,
-};*/
-
-/*
- * WLAN: Save SDIO Card detect func into this pointer
- */
-static void (*wifi_status_cb)(struct platform_device *, int state);
-
-static int smdk4210_wifi_status_register(void (*notify_func)
-		(struct platform_device *, int state))
-{
-	if (!notify_func)
-		return -EAGAIN;
-	else
-		wifi_status_cb = notify_func;
-
-	return 0;
-}
-
-#define SMDK4210_WLAN_WOW EXYNOS4_GPX2(3)
-#define SMDK4210_WLAN_RESET EXYNOS4_GPX2(4)
-
-static void smdk4210_wlan_setup_power(bool val)
-{
-	int err;
-
-	if (val) {
-		err = gpio_request_one(SMDK4210_WLAN_RESET,
-				GPIOF_OUT_INIT_LOW, "GPX2_4");
-		if (err) {
-			pr_warning("SMDK4210: Not obtain WIFI gpios\n");
-			return;
-		}
-		s3c_gpio_cfgpin(SMDK4210_WLAN_RESET, S3C_GPIO_OUTPUT);
-		s3c_gpio_setpull(SMDK4210_WLAN_RESET,
-						S3C_GPIO_PULL_NONE);
-		/* VDD33,I/O Supply must be done */
-		gpio_set_value(SMDK4210_WLAN_RESET, 0);
-		udelay(30);	/*Tb */
-		gpio_direction_output(SMDK4210_WLAN_RESET, 1);
-	} else {
-		gpio_direction_output(SMDK4210_WLAN_RESET, 0);
-		gpio_free(SMDK4210_WLAN_RESET);
-	}
-	mdelay(100);
-
-	return;
-}
-
-/*
- * This will be called at init time of WLAN driver
- * WARNING: Remove me! This is code for ORIGEN, not GalaxyS2 :)
- */
-int smdk4210_wifi_set_detect(bool val)
-{
-	if (!wifi_status_cb) {
-		printk(KERN_WARNING "WLAN: Nobody to notify\n");
-		return -EAGAIN;
-	}
-	if (true == val) {
-		smdk4210_wlan_setup_power(true);
-		wifi_status_cb(&s3c_device_hsmmc3, 1);
-	} else {
-		smdk4210_wlan_setup_power(false);
-		wifi_status_cb(&s3c_device_hsmmc3, 0);
-	}
-
-	return 0;
-}
-
-struct ath6kl_platform_data smdk4210_wlan_data  __initdata = {
-	.setup_power = smdk4210_wifi_set_detect,
-};
-
 
 
 
@@ -458,269 +429,6 @@ static void __init smdk4210_ehci_init(void)
 	s5p_ehci_set_platdata(pdata);
 }
 
-/* Bluetooth rfkill gpio platform data */
-struct rfkill_gpio_platform_data smdk4210_bt_pdata = {
-	.reset_gpio	= EXYNOS4_GPX2(2),
-	.shutdown_gpio	= -1,
-	.type		= RFKILL_TYPE_BLUETOOTH,
-	.name		= "smdk4210-bt",
-};
-
-/* Bluetooth Platform device */
-static struct platform_device smdk4210_device_bluetooth = {
-	.name		= "rfkill_gpio",
-	.id		= -1,
-	.dev		= {
-		.platform_data	= &smdk4210_bt_pdata,
-	},
-};
-
-static struct regulator_consumer_supply emmc_supplies[] = {
-	REGULATOR_SUPPLY("vmmc", "s3c-sdhci.0"),
-	REGULATOR_SUPPLY("vmmc", "dw_mmc"),
-};
-
-
-/* temperature table for ADC 6 */
-static struct sec_bat_adc_table_data temper_table[] =  {
-	{  273,	 670 },
-	{  289,	 660 },
-	{  304,	 650 },
-	{  314,	 640 },
-	{  325,	 630 },
-	{  337,	 620 },
-	{  347,	 610 },
-	{  361,	 600 },
-	{  376,	 590 },
-	{  391,	 580 },
-	{  406,	 570 },
-	{  417,	 560 },
-	{  431,	 550 },
-	{  447,	 540 },
-	{  474,	 530 },
-	{  491,	 520 },
-	{  499,	 510 },
-	{  511,	 500 },
-	{  519,	 490 },
-	{  547,	 480 },
-	{  568,	 470 },
-	{  585,	 460 },
-	{  597,	 450 },
-	{  614,	 440 },
-	{  629,	 430 },
-	{  647,	 420 },
-	{  672,	 410 },
-	{  690,	 400 },
-	{  720,	 390 },
-	{  735,	 380 },
-	{  755,	 370 },
-	{  775,	 360 },
-	{  795,	 350 },
-	{  818,	 340 },
-	{  841,	 330 },
-	{  864,	 320 },
-	{  887,	 310 },
-	{  909,	 300 },
-	{  932,	 290 },
-	{  954,	 280 },
-	{  976,	 270 },
-	{  999,	 260 },
-	{ 1021,	 250 },
-	{ 1051,	 240 },
-	{ 1077,	 230 },
-	{ 1103,	 220 },
-	{ 1129,	 210 },
-	{ 1155,	 200 },
-	{ 1177,	 190 },
-	{ 1199,	 180 },
-	{ 1220,	 170 },
-	{ 1242,	 160 },
-	{ 1263,	 150 },
-	{ 1284,	 140 },
-	{ 1306,	 130 },
-	{ 1326,	 120 },
-	{ 1349,	 110 },
-	{ 1369,	 100 },
-	{ 1390,	  90 },
-	{ 1411,	  80 },
-	{ 1433,	  70 },
-	{ 1454,	  60 },
-	{ 1474,	  50 },
-	{ 1486,	  40 },
-	{ 1499,	  30 },
-	{ 1512,	  20 },
-	{ 1531,	  10 },
-	{ 1548,	   0 },
-	{ 1570,	 -10 },
-	{ 1597,	 -20 },
-	{ 1624,	 -30 },
-	{ 1633,	 -40 },
-	{ 1643,	 -50 },
-	{ 1652,	 -60 },
-	{ 1663,	 -70 },
-};
-
-/* temperature table for ADC 7 */
-static struct sec_bat_adc_table_data temper_table_ADC7[] =  {
-	{  289,	 670 },
-	{  304,	 660 },
-	{  314,	 650 },
-	{  325,	 640 },
-	{  337,	 630 },
-	{  347,	 620 },
-	{  358,	 610 },
-	{  371,	 600 },
-	{  384,	 590 },
-	{  396,	 580 },
-	{  407,	 570 },
-	{  419,	 560 },
-	{  431,	 550 },
-	{  447,	 540 },
-	{  474,	 530 },
-	{  491,	 520 },
-	{  499,	 510 },
-	{  511,	 500 },
-	{  529,	 490 },
-	{  547,	 480 },
-	{  568,	 470 },
-	{  585,	 460 },
-	{  597,	 450 },
-	{  611,	 440 },
-	{  626,	 430 },
-	{  643,	 420 },
-	{  665,	 410 },
-	{  680,	 400 },
-	{  703,	 390 },
-	{  720,	 380 },
-	{  743,	 370 },
-	{  765,	 360 },
-	{  789,	 350 },
-	{  813,	 340 },
-	{  841,	 330 },
-	{  864,	 320 },
-	{  887,	 310 },
-	{  909,	 300 },
-	{  932,	 290 },
-	{  954,	 280 },
-	{  976,	 270 },
-	{  999,	 260 },
-	{ 1021,	 250 },
-	{ 1051,	 240 },
-	{ 1077,	 230 },
-	{ 1103,	 220 },
-	{ 1129,	 210 },
-	{ 1155,	 200 },
-	{ 1177,	 190 },
-	{ 1199,	 180 },
-	{ 1220,	 170 },
-	{ 1242,	 160 },
-	{ 1263,	 150 },
-	{ 1284,	 140 },
-	{ 1306,	 130 },
-	{ 1326,	 120 },
-	{ 1349,	 110 },
-	{ 1369,	 100 },
-	{ 1390,	  90 },
-	{ 1411,	  80 },
-	{ 1433,	  70 },
-	{ 1454,	  60 },
-	{ 1474,	  50 },
-	{ 1486,	  40 },
-	{ 1499,	  30 },
-	{ 1512,	  20 },
-	{ 1531,	  10 },
-	{ 1548,	   0 },
-	{ 1570,	 -10 },
-	{ 1597,	 -20 },
-	{ 1624,	 -30 },
-	{ 1633,	 -40 },
-	{ 1643,	 -50 },
-	{ 1652,	 -60 },
-	{ 1663,	 -70 },
-};
-#define ADC_CH_TEMPERATURE_PMIC	6
-#define ADC_CH_TEMPERATURE_LCD	7
-
-static unsigned int sec_bat_get_lpcharging_state(void)
-{
-	u32 val = __raw_readl(S5P_INFORM2);
-	struct power_supply *psy = power_supply_get_by_name("max8997-charger");
-	union power_supply_propval value;
-
-	BUG_ON(!psy);
-
-	if (val == 1) {
-		psy->get_property(psy, POWER_SUPPLY_PROP_STATUS, &value);
-		pr_info("%s: charging status: %d\n", __func__, value.intval);
-		if (value.intval == POWER_SUPPLY_STATUS_DISCHARGING)
-			pr_warn("%s: DISCHARGING\n", __func__);
-	}
-
-	pr_info("%s: LP charging:%d\n", __func__, val);
-	return val;
-}
-
-/*  : Fix me regarding ADC kernel Panic
-static void sec_bat_get_adc_value_cb(int value)
-{
-	if (sec_battery_cbs.lcd_set_adc_value) {
-		sec_battery_cbs.lcd_set_adc_value(value);
-	}
-}
-*/
-
-static struct sec_bat_platform_data sec_bat_pdata = {
-	.fuel_gauge_name	= "fuelgauge",
-	.charger_name		= "max8997-charger",
-	.sub_charger_name	= "max8922-charger",
-
-	/* TODO: should provide temperature table */
-	.adc_arr_size		= ARRAY_SIZE(temper_table),
-	.adc_table			= temper_table,
-	.adc_channel		= ADC_CH_TEMPERATURE_PMIC,
-	.adc_sub_arr_size	= ARRAY_SIZE(temper_table_ADC7),
-	.adc_sub_table		= temper_table_ADC7,
-	.adc_sub_channel	= ADC_CH_TEMPERATURE_LCD,
-	.get_lpcharging_state	= sec_bat_get_lpcharging_state,
-};
-
-static struct platform_device sec_device_battery = {
-	.name = "sec-battery",
-	.id = -1,
-	.dev.platform_data = &sec_bat_pdata,
-};
-
-static int max8922_cfg_gpio(void)
-{
-	if (system_rev < HWREV_FOR_BATTERY)
-		return -ENODEV;
-
-	s3c_gpio_cfgpin(GPIO_CHG_EN, S3C_GPIO_OUTPUT);
-	s3c_gpio_setpull(GPIO_CHG_EN, S3C_GPIO_PULL_NONE);
-	gpio_set_value(GPIO_CHG_EN, GPIO_LEVEL_LOW);
-
-	s3c_gpio_cfgpin(GPIO_CHG_ING_N, S3C_GPIO_INPUT);
-	s3c_gpio_setpull(GPIO_CHG_ING_N, S3C_GPIO_PULL_NONE);
-
-	s3c_gpio_cfgpin(GPIO_TA_nCONNECTED, S3C_GPIO_INPUT);
-	s3c_gpio_setpull(GPIO_TA_nCONNECTED, S3C_GPIO_PULL_NONE);
-
-	return 0;
-}
-
-static struct max8922_platform_data max8922_pdata = {
-	/*.topoff_cb = c1_charger_topoff_cb,*/
-	.cfg_gpio = max8922_cfg_gpio,
-	.gpio_chg_en = GPIO_CHG_EN,
-	.gpio_chg_ing = GPIO_CHG_ING_N,
-	.gpio_ta_nconnected = GPIO_TA_nCONNECTED,
-};
-
-static struct platform_device max8922_device_charger = {
-	.name = "max8922-charger",
-	.id = -1,
-	.dev.platform_data = &max8922_pdata,
-};
 
 static struct platform_device *smdk4210_devices[] __initdata = {
 	&exynos4_device_pd[PD_MFC],
@@ -736,7 +444,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_i2c5,
 	&s3c_device_i2c7,
 	&s3c_device_i2c6,
-	&exynos4_device_i2c9,
+	//&exynos4_device_i2c9,
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc2,
 	&s3c_device_hsmmc3,
@@ -745,11 +453,10 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s5p_device_ohci,
 	&s5p_device_ehci,
-	&sec_device_battery,
-	&max8922_device_charger,
 	&exynos4_device_i2s0,
 	&samsung_asoc_dma,
 	&exynos4_device_sysmmu,
+	&i2c_gpio_gauge,
 #ifdef CONFIG_VIDEO_FIMG2D
 	&s5p_device_fimg2d,
 #endif
@@ -770,8 +477,6 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 #ifdef CONFIG_USB_GADGET_S3C_OTGD
 	&s3c_device_usbgadget,
 #endif
-
-	&smdk4210_device_bluetooth,
 
 	&smdk4210_device_gpiokeys,
 };
@@ -898,7 +603,7 @@ static void __init smdk4210_machine_init(void)
 	i2c_register_board_info(5, i2c_devs5, ARRAY_SIZE(i2c_devs5));
 	//i2c_register_board_info(6, i2c_devs6, ARRAY_SIZE(i2c_devs6));
 	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));
-	i2c_register_board_info(9, i2c_devs9_emul, ARRAY_SIZE(i2c_devs9_emul));
+	//i2c_register_board_info(9, i2c_devs9_emul, ARRAY_SIZE(i2c_devs9_emul));
 	
 #ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(NULL);
@@ -932,6 +637,7 @@ static void __init smdk4210_machine_init(void)
 
 	smdk4210_ohci_init();
 	clk_xusbxti.rate = 24000000;
+	smdk4210_init_battery_gauge();
 
 	smdk4210_ehci_init();
 
