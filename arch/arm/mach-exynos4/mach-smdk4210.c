@@ -130,7 +130,7 @@ static struct s3c2410_uartcfg smdk4210_uartcfgs[] __initdata = {
  * TSP 
  */
 static struct mxt_platform_data mxt_pdata = {
-	.x_line			= 18,
+	.x_line			= 19,
 	.y_line			= 11,
 	.x_size			= 480,
 	.y_size			= 800,
