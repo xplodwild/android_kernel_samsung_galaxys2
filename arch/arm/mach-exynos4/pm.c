@@ -20,7 +20,6 @@
 #include <linux/io.h>
 #include <linux/err.h>
 #include <linux/clk.h>
-#include <linux/regulator/machine.h>
 
 #include <asm/cacheflush.h>
 #include <asm/hardware/cache-l2x0.h>
@@ -28,6 +27,7 @@
 #include <plat/cpu.h>
 #include <plat/pm.h>
 #include <plat/pll.h>
+#include <plat/regs-srom.h>
 
 #include <mach/regs-irq.h>
 #include <mach/regs-gpio.h>
@@ -35,20 +35,21 @@
 #include <mach/regs-pmu.h>
 #include <mach/pm-core.h>
 #include <mach/pmu.h>
-#include <mach/regs-audss.h>
-
 
 static struct sleep_save exynos4_set_clksrc[] = {
 	{ .reg = S5P_CLKSRC_MASK_TOP			, .val = 0x00000001, },
 	{ .reg = S5P_CLKSRC_MASK_CAM			, .val = 0x11111111, },
 	{ .reg = S5P_CLKSRC_MASK_TV			, .val = 0x00000111, },
 	{ .reg = S5P_CLKSRC_MASK_LCD0			, .val = 0x00001111, },
-	{ .reg = S5P_CLKSRC_MASK_LCD1			, .val = 0x00001111, },
 	{ .reg = S5P_CLKSRC_MASK_MAUDIO			, .val = 0x00000001, },
 	{ .reg = S5P_CLKSRC_MASK_FSYS			, .val = 0x01011111, },
 	{ .reg = S5P_CLKSRC_MASK_PERIL0			, .val = 0x01111111, },
 	{ .reg = S5P_CLKSRC_MASK_PERIL1			, .val = 0x01110111, },
 	{ .reg = S5P_CLKSRC_MASK_DMC			, .val = 0x00010000, },
+};
+
+static struct sleep_save exynos4210_set_clksrc[] = {
+	{ .reg = S5P_CLKSRC_MASK_LCD1			, .val = 0x00001111, },
 };
 
 static struct sleep_save exynos4_epll_save[] = {
@@ -62,72 +63,6 @@ static struct sleep_save exynos4_vpll_save[] = {
 };
 
 static struct sleep_save exynos4_core_save[] = {
-	/* CMU side */
-	SAVE_ITEM(S5P_CLKSRC_AUDSS),
-	SAVE_ITEM(S5P_CLKDIV_LEFTBUS),
-	SAVE_ITEM(S5P_CLKGATE_IP_LEFTBUS),
-	SAVE_ITEM(S5P_CLKDIV_RIGHTBUS),
-	SAVE_ITEM(S5P_CLKGATE_IP_RIGHTBUS),
-	SAVE_ITEM(S5P_CLKSRC_TOP0),
-	SAVE_ITEM(S5P_CLKSRC_TOP1),
-	SAVE_ITEM(S5P_CLKSRC_CAM),
-	SAVE_ITEM(S5P_CLKSRC_MFC),
-	SAVE_ITEM(S5P_CLKSRC_IMAGE),
-	SAVE_ITEM(S5P_CLKSRC_LCD0),
-	SAVE_ITEM(S5P_CLKSRC_LCD1),
-	SAVE_ITEM(S5P_CLKSRC_MAUDIO),
-	SAVE_ITEM(S5P_CLKSRC_FSYS),
-	SAVE_ITEM(S5P_CLKSRC_PERIL0),
-	SAVE_ITEM(S5P_CLKSRC_PERIL1),
-	SAVE_ITEM(S5P_CLKDIV_CAM),
-	SAVE_ITEM(S5P_CLKDIV_TV),
-	SAVE_ITEM(S5P_CLKDIV_MFC),
-	SAVE_ITEM(S5P_CLKDIV_G3D),
-	SAVE_ITEM(S5P_CLKDIV_IMAGE),
-	SAVE_ITEM(S5P_CLKDIV_LCD0),
-	SAVE_ITEM(S5P_CLKDIV_LCD1),
-	SAVE_ITEM(S5P_CLKDIV_MAUDIO),
-	SAVE_ITEM(S5P_CLKDIV_FSYS0),
-	SAVE_ITEM(S5P_CLKDIV_FSYS1),
-	SAVE_ITEM(S5P_CLKDIV_FSYS2),
-	SAVE_ITEM(S5P_CLKDIV_FSYS3),
-	SAVE_ITEM(S5P_CLKDIV_PERIL0),
-	SAVE_ITEM(S5P_CLKDIV_PERIL1),
-	SAVE_ITEM(S5P_CLKDIV_PERIL2),
-	SAVE_ITEM(S5P_CLKDIV_PERIL3),
-	SAVE_ITEM(S5P_CLKDIV_PERIL4),
-	SAVE_ITEM(S5P_CLKDIV_PERIL5),
-	SAVE_ITEM(S5P_CLKDIV_TOP),
-	SAVE_ITEM(S5P_CLKSRC_MASK_CAM),
-	SAVE_ITEM(S5P_CLKSRC_MASK_TV),
-	SAVE_ITEM(S5P_CLKSRC_MASK_LCD0),
-	SAVE_ITEM(S5P_CLKSRC_MASK_LCD1),
-	SAVE_ITEM(S5P_CLKSRC_MASK_MAUDIO),
-	SAVE_ITEM(S5P_CLKSRC_MASK_FSYS),
-	SAVE_ITEM(S5P_CLKSRC_MASK_PERIL0),
-	SAVE_ITEM(S5P_CLKSRC_MASK_PERIL1),
-	SAVE_ITEM(S5P_CLKGATE_SCLKCAM),
-	SAVE_ITEM(S5P_CLKGATE_IP_CAM),
-	SAVE_ITEM(S5P_CLKGATE_IP_TV),
-	SAVE_ITEM(S5P_CLKGATE_IP_MFC),
-	SAVE_ITEM(S5P_CLKGATE_IP_G3D),
-	SAVE_ITEM(S5P_CLKGATE_IP_IMAGE),
-	SAVE_ITEM(S5P_CLKGATE_IP_LCD0),
-	SAVE_ITEM(S5P_CLKGATE_IP_LCD1),
-	SAVE_ITEM(S5P_CLKGATE_IP_FSYS),
-	SAVE_ITEM(S5P_CLKGATE_IP_GPS),
-	SAVE_ITEM(S5P_CLKGATE_IP_PERIL),
-	SAVE_ITEM(S5P_CLKGATE_IP_PERIR),
-	SAVE_ITEM(S5P_CLKGATE_BLOCK),
-	SAVE_ITEM(S5P_CLKSRC_MASK_DMC),
-	SAVE_ITEM(S5P_CLKSRC_DMC),
-	SAVE_ITEM(S5P_CLKDIV_DMC0),
-	SAVE_ITEM(S5P_CLKDIV_DMC1),
-	SAVE_ITEM(S5P_CLKGATE_IP_DMC),
-	SAVE_ITEM(S5P_CLKSRC_CPU),
-	SAVE_ITEM(S5P_CLKDIV_CPU),
-	SAVE_ITEM(S5P_CLKGATE_SCLKCPU),
-	SAVE_ITEM(S5P_CLKGATE_IP_CPU),
 	/* GIC side */
 	SAVE_ITEM(S5P_VA_GIC_CPU + 0x000),
 	SAVE_ITEM(S5P_VA_GIC_CPU + 0x004),
@@ -210,15 +145,15 @@ static struct sleep_save exynos4_core_save[] = {
 	SAVE_ITEM(S5P_VA_COMBINER_BASE + 0x070),
 	SAVE_ITEM(S5P_VA_COMBINER_BASE + 0x080),
 	SAVE_ITEM(S5P_VA_COMBINER_BASE + 0x090),
+
+	/* SROM side */
+	SAVE_ITEM(S5P_SROM_BW),
+	SAVE_ITEM(S5P_SROM_BC0),
+	SAVE_ITEM(S5P_SROM_BC1),
+	SAVE_ITEM(S5P_SROM_BC2),
+	SAVE_ITEM(S5P_SROM_BC3),
 };
 
-static struct sleep_save exynos4_l2cc_save[] = {
-	SAVE_ITEM(S5P_VA_L2CC + L2X0_TAG_LATENCY_CTRL),
-	SAVE_ITEM(S5P_VA_L2CC + L2X0_DATA_LATENCY_CTRL),
-	SAVE_ITEM(S5P_VA_L2CC + L2X0_PREFETCH_CTRL),
-	SAVE_ITEM(S5P_VA_L2CC + L2X0_POWER_CTRL),
-	SAVE_ITEM(S5P_VA_L2CC + L2X0_AUX_CTRL),
-};
 
 /* For Cortex-A9 Diagnostic and Power control register */
 static unsigned int save_arm_register[2];
@@ -238,9 +173,7 @@ static void exynos4_pm_prepare(void)
 {
 	u32 tmp;
 
-#ifdef CONFIG_CACHE_L2X0
-	s3c_pm_do_save(exynos4_l2cc_save, ARRAY_SIZE(exynos4_l2cc_save));
-#endif
+	s3c_pm_do_save(exynos4_core_save, ARRAY_SIZE(exynos4_core_save));
 	s3c_pm_do_save(exynos4_epll_save, ARRAY_SIZE(exynos4_epll_save));
 	s3c_pm_do_save(exynos4_vpll_save, ARRAY_SIZE(exynos4_vpll_save));
 
@@ -259,16 +192,8 @@ static void exynos4_pm_prepare(void)
 
 	s3c_pm_do_restore_core(exynos4_set_clksrc, ARRAY_SIZE(exynos4_set_clksrc));
 
-	int ret = 0;
-
-	if (s3c_config_sleep_gpio_table)
-		s3c_config_sleep_gpio_table();
-
-#if defined(CONFIG_REGULATOR)
-	ret = regulator_suspend_prepare(PM_SUSPEND_MEM);
-#endif
-
-	//return ret;
+	/* if (soc_is_exynos4210()) */
+		s3c_pm_do_restore_core(exynos4210_set_clksrc, ARRAY_SIZE(exynos4210_set_clksrc));
 
 }
 
@@ -276,7 +201,7 @@ static int exynos4_pm_add(struct sys_device *sysdev)
 {
 	pm_cpu_prep = exynos4_pm_prepare;
 	pm_cpu_sleep = exynos4_cpu_suspend;
-	
+
 	return 0;
 }
 
@@ -396,6 +321,36 @@ static __init int exynos4_pm_drvinit(void)
 }
 arch_initcall(exynos4_pm_drvinit);
 
+static int exynos4_pm_suspend(void)
+{
+	unsigned long tmp;
+
+	/* Setting Central Sequence Register for power down mode */
+
+	tmp = __raw_readl(S5P_CENTRAL_SEQ_CONFIGURATION);
+	tmp &= ~S5P_CENTRAL_LOWPWR_CFG;
+	__raw_writel(tmp, S5P_CENTRAL_SEQ_CONFIGURATION);
+
+	/*if (soc_is_exynos4212()) {
+		tmp = __raw_readl(S5P_CENTRAL_SEQ_OPTION);
+		tmp &= ~(S5P_USE_STANDBYWFI_ISP_ARM |
+			 S5P_USE_STANDBYWFE_ISP_ARM);
+		__raw_writel(tmp, S5P_CENTRAL_SEQ_OPTION);
+	}*/
+
+	/* Save Power control register */
+	asm ("mrc p15, 0, %0, c15, c0, 0"
+	     : "=r" (tmp) : : "cc");
+	save_arm_register[0] = tmp;
+
+	/* Save Diagnostic register */
+	asm ("mrc p15, 0, %0, c15, c0, 1"
+	     : "=r" (tmp) : : "cc");
+	save_arm_register[1] = tmp;
+
+	return 0;
+}
+
 static void exynos4_pm_resume(void)
 {
 	unsigned long tmp;
@@ -413,18 +368,17 @@ static void exynos4_pm_resume(void)
 		/* No need to perform below restore code */
 		goto early_wakeup;
 	}
-
 	/* Restore Power control register */
 	tmp = save_arm_register[0];
 	asm volatile ("mcr p15, 0, %0, c15, c0, 0"
-			: : "r" (tmp)
-			: "cc");
+		      : : "r" (tmp)
+		      : "cc");
 
 	/* Restore Diagnostic register */
 	tmp = save_arm_register[1];
 	asm volatile ("mcr p15, 0, %0, c15, c0, 1"
-			: : "r" (tmp)
-			: "cc");
+		      : : "r" (tmp)
+		      : "cc");
 
 	/* For release retention */
 
@@ -442,49 +396,16 @@ static void exynos4_pm_resume(void)
 
 	exynos4_scu_enable(S5P_VA_SCU);
 
-#ifdef CONFIG_CACHE_L2X0
-	/* Restore the cache controller registers only if it is not enabled already*/
-	if(!(__raw_readl(S5P_VA_L2CC + L2X0_CTRL)&1)) {
-
-		s3c_pm_do_restore_core(exynos4_l2cc_save, ARRAY_SIZE(exynos4_l2cc_save));
-		outer_inv_all();
-		/* enable L2X0*/
-		writel_relaxed(1, S5P_VA_L2CC + L2X0_CTRL);
-	}
-#endif
-
 early_wakeup:
+	/* Clear INFORM Register */
+	__raw_writel(0, S5P_INFORM1);
+
 	return;
 }
 
-static int exynos4_pm_suspend(void)
-{
-	unsigned long tmp;
-
-	s3c_pm_do_save(exynos4_core_save, ARRAY_SIZE(exynos4_core_save));
-
-	/* Setting Central Sequence Register for power down mode */
-
-	tmp = __raw_readl(S5P_CENTRAL_SEQ_CONFIGURATION);
-	tmp &= ~S5P_CENTRAL_LOWPWR_CFG;
-	__raw_writel(tmp, S5P_CENTRAL_SEQ_CONFIGURATION);
-
-	/* Save Power control register */
-	asm ("mrc p15, 0, %0, c15, c0, 0"
-		: "=r" (tmp) : : "cc");
-	save_arm_register[0] = tmp;
-
-	/* Save Diagnostic register */
-	asm ("mrc p15, 0, %0, c15, c0, 1"
-		: "=r" (tmp) : : "cc");
-	save_arm_register[1] = tmp;
-
-	return 0;
-}
-
 static struct syscore_ops exynos4_pm_syscore_ops = {
-	.resume		= exynos4_pm_resume,
 	.suspend	= exynos4_pm_suspend,
+	.resume		= exynos4_pm_resume,
 };
 
 static __init int exynos4_pm_syscore_init(void)

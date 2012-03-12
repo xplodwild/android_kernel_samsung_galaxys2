@@ -217,6 +217,7 @@ static struct i2c_board_info i2c_gpio_gauge_devs[] __initdata = {
 	{
 		I2C_BOARD_INFO("max17042", 0x36),
 		.platform_data = &smdk4210_max17042_data,
+		.irq = IRQ_EINT(19),
 	},
 };
 
@@ -238,25 +239,32 @@ static void __init smdk4210_init_battery_gauge(void)
 
 extern struct max8997_platform_data max8997_pdata;
 
-/* I2C0 */
-static struct i2c_board_info i2c_devs0[] __initdata = {
-	{ I2C_BOARD_INFO("24c128", 0x50), },	/* Samsung S524AD0XD1 */
-	{ I2C_BOARD_INFO("24c128", 0x52), 		/* Samsung S524AD0XD1 */
-		
-		/* The address is 0xCC used since SRAD = 0 */
-		/*I2C_BOARD_INFO("max8997", (0xCC >> 1)),
-		.platform_data = &max8997_pdata,*/
+static struct i2c_board_info i2c_devs5[] __initdata = {
+	{
+		I2C_BOARD_INFO("max8997", (0xCC >> 1)),
+		.platform_data = &max8997_pdata,
 	},
-
 };
 
+static void __init smdk4210_init_pmic(void) {
+	gpio_request(GPIO_PMIC_IRQ, "PMIC_IRQ");
+	s5p_register_gpio_interrupt(GPIO_PMIC_IRQ);
+	s3c_gpio_cfgpin(GPIO_PMIC_IRQ, S3C_GPIO_SFN(0xf));
+	s3c_gpio_setpull(GPIO_PMIC_IRQ, S3C_GPIO_PULL_UP);
+	i2c_devs5[0].irq = gpio_to_irq(GPIO_PMIC_IRQ);
+
+}
+
+/* I2C0 */
+
+
 /* I2C1 */
-static struct i2c_board_info i2c_devs1[] __initdata = {
+/*static struct i2c_board_info i2c_devs1[] __initdata = {
 	{
 		I2C_BOARD_INFO("rt5625", 0x1e),
 	},
 };
-
+*/
 
 /* I2C2 */
 
@@ -266,12 +274,7 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 
 
 /* I2C5 */
-static struct i2c_board_info i2c_devs5[] __initdata = {
-	{
-		I2C_BOARD_INFO("max8997", (0xCC >> 1)),
-		.platform_data = &max8997_pdata,
-	},
-};
+
 
 /* I2C6 */
 
@@ -431,53 +434,44 @@ static void __init smdk4210_ehci_init(void)
 
 
 static struct platform_device *smdk4210_devices[] __initdata = {
+	&exynos4_device_sysmmu,
 	&exynos4_device_pd[PD_MFC],
 	&exynos4_device_pd[PD_G3D],
 	&exynos4_device_pd[PD_LCD0],
 	&exynos4_device_pd[PD_TV],
-#ifdef CONFIG_FB_S3C
 	&s3c_device_fb,
-#endif
+	&s3c_device_i2c5,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
 	&s3c_device_i2c3,
-	&s3c_device_i2c5,
-	&s3c_device_i2c7,
 	&s3c_device_i2c6,
-	//&exynos4_device_i2c9,
+	/*&s3c_device_i2c7,*/
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc2,
 	&s3c_device_hsmmc3,
 	&s3c_device_mshci,
 	&s3c_device_rtc,
+	&s3c_device_timer[1],
 	&s3c_device_wdt,
 	&s5p_device_ohci,
 	&s5p_device_ehci,
 	&exynos4_device_i2s0,
 	&samsung_asoc_dma,
-	&exynos4_device_sysmmu,
-	&i2c_gpio_gauge,
-#ifdef CONFIG_VIDEO_FIMG2D
 	&s5p_device_fimg2d,
-#endif
-#ifdef CONFIG_VIDEO_JPEG
 	&s5p_device_jpeg,
-#endif
-#ifdef CONFIG_VIDEO_FIMC
 	&s3c_device_fimc0,
 	&s3c_device_fimc1,
 	&s3c_device_fimc2,
-#endif
 
-#ifdef CONFIG_VIDEO_SAMSUNG_TVOUT
+#if 0 /* TVOUT */
 	&s5p_device_tvout,
 	&s5p_device_cec,
 	&s5p_device_hpd,
 #endif
-#ifdef CONFIG_USB_GADGET_S3C_OTGD
-	&s3c_device_usbgadget,
-#endif
 
+	&s3c_device_usbgadget,
+
+	&i2c_gpio_gauge,
 	&smdk4210_device_gpiokeys,
 };
 
@@ -509,7 +503,7 @@ static void __init smdk4210_map_io(void)
 	s3c24xx_init_uarts(smdk4210_uartcfgs, ARRAY_SIZE(smdk4210_uartcfgs));
 }
 
-#if defined(CONFIG_VIDEO_SAMSUNG_TVOUT)
+#if 0 /* defined(CONFIG_VIDEO_SAMSUNG_TVOUT)*/
 static struct s5p_platform_hpd hdmi_hpd_data __initdata = {
 
 };
@@ -518,36 +512,13 @@ static struct s5p_platform_cec hdmi_cec_data __initdata = {
 };
 #endif
 
-static void __init smdk4210_tsp_init(void)
-{
-	int gpio;
-
-	/* TSP_LDO_ON: XMDMADDR_11 */
-	gpio = GPIO_TSP_LDO_ON;
-	gpio_request(gpio, "TSP_LDO_ON");
-	gpio_direction_output(gpio, 1);
-	s3c_gpio_setpull(GPIO_TSP_INT, S3C_GPIO_PULL_NONE);
-	gpio_export(gpio, 0);
-	
-	/* TSP_INT: XMDMADDR_7 */
-	gpio = GPIO_TSP_INT;
-	gpio_request(gpio, "TSP_INT");
-	s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0xf));
-	s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-	i2c_devs3[0].irq = gpio_to_irq(gpio);
-	
-	printk("%s touch : %d", __func__, i2c_devs3[0].irq);
-}
-
 
 static void __init smdk4210_machine_init(void)
 {
 	c1_config_gpio_table();
 	c1_config_sleep_gpio_table();
 	
-	s3c_pm_init();
-	
-	smdk4210_init_tsp();
+	//s3c_pm_init();
 	
 	exynos4_pd_enable(&exynos4_device_pd[PD_MFC].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_G3D].dev);
@@ -558,7 +529,7 @@ static void __init smdk4210_machine_init(void)
 	
 	/* SROMC Setup */
 	/* TODO: Move me to a separate function */
-	u32 tmp;
+	/*u32 tmp;
 
 	tmp = __raw_readl(S5P_SROM_BW);
 	tmp &= ~(0xffff);
@@ -575,7 +546,7 @@ static void __init smdk4210_machine_init(void)
 	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x180));
 	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x1a0));
 	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x1c0));
-	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x1e0));	
+	__raw_writel(0x22222222, (S5P_VA_GPIO + 0x1e0));	*/
 	
 	/* MMC Card init */
 	s3c_gpio_cfgpin(GPIO_MASSMEM_EN, S3C_GPIO_OUTPUT);
@@ -590,62 +561,62 @@ static void __init smdk4210_machine_init(void)
 		     | 0x90009, S5P_CLKDIV_FSYS1);
 
 	/* PLATDATA init */
-	smdk4210_tsp_init();
 	s3c_i2c0_set_platdata(NULL);
+	/*i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0))*/
+
 	s3c_i2c1_set_platdata(NULL);
-	s3c_i2c3_set_platdata(&i2c3_data);
-	s3c_i2c5_set_platdata(NULL);
-	s3c_i2c6_set_platdata(NULL);
-	s3c_i2c7_set_platdata(NULL);
-	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
-	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
-	i2c_register_board_info(3, i2c_devs3, ARRAY_SIZE(i2c_devs3)); /* TSP */
-	i2c_register_board_info(5, i2c_devs5, ARRAY_SIZE(i2c_devs5));
-	//i2c_register_board_info(6, i2c_devs6, ARRAY_SIZE(i2c_devs6));
-	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));
-	//i2c_register_board_info(9, i2c_devs9_emul, ARRAY_SIZE(i2c_devs9_emul));
+	/*i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));*/
 	
-#ifdef CONFIG_FB_S3C
+	smdk4210_init_tsp();
+	s3c_i2c3_set_platdata(&i2c3_data);
+	i2c_register_board_info(3, i2c_devs3, ARRAY_SIZE(i2c_devs3)); /* TSP */
+	
+	smdk4210_init_pmic();
+	s3c_i2c5_set_platdata(NULL);
+	i2c_register_board_info(5, i2c_devs5, ARRAY_SIZE(i2c_devs5));
+	
+	s3c_i2c6_set_platdata(NULL);
+	//i2c_register_board_info(6, i2c_devs6, ARRAY_SIZE(i2c_devs6));
+
+	/*s3c_i2c7_set_platdata(NULL);											TVOUT
+	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));*/
+	
+	i2c_register_board_info(9, i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
+	
 	s3cfb_set_platdata(NULL);
 	s3c_device_fb.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
-#endif
+	
 	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
 	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
 	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
 	s3c_mshci_set_platdata(&smdk4210_mshc_pdata);
 
 	
-#ifdef CONFIG_VIDEO_FIMG2D
 	s5p_fimg2d_set_platdata(&fimg2d_data);
 	s5p_device_fimg2d.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
-#endif
-#ifdef CONFIG_VIDEO_FIMC
+	
 	/* fimc */
 	s3c_fimc0_set_platdata(&fimc_plat);
 	s3c_fimc1_set_platdata(&fimc_plat);
 	s3c_fimc2_set_platdata(&fimc_plat);
-#endif
-#if defined(CONFIG_VIDEO_SAMSUNG_TVOUT)
+
+#if 0 /* TVOUT - Will nebkat hax? */
 	s5p_hdmi_hpd_set_platdata(&hdmi_hpd_data);
 	s5p_hdmi_cec_set_platdata(&hdmi_cec_data);
 	s5p_device_tvout.dev.parent = &exynos4_device_pd[PD_TV].dev;
 #endif
-	platform_add_devices(smdk4210_devices, ARRAY_SIZE(smdk4210_devices));
-#ifdef CONFIG_USB_GADGET_S3C_OTGD
-	smdk4210_otg_init();
-#endif
+	
 
+	smdk4210_otg_init();
 	smdk4210_ohci_init();
 	clk_xusbxti.rate = 24000000;
 	smdk4210_init_battery_gauge();
-
 	smdk4210_ehci_init();
+	
+	platform_add_devices(smdk4210_devices, ARRAY_SIZE(smdk4210_devices));
 
 	samsung_bl_set(&smdk4210_bl_gpio_info, &smdk4210_bl_data);
-
-	smdk4210_bt_setup();
-
-	/* ORIGEN: ath6kl_set_platform_data(&smdk4210_wlan_data); */
+	/*smdk4210_bt_setup();*/
 }
 
 #if defined(CONFIG_S5P_MEM_CMA)

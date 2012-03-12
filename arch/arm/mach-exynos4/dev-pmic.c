@@ -9,9 +9,10 @@
 #include <linux/mfd/max8997.h>
 
 #include <mach/gpio.h>
+#include <mach/irqs.h>
 
 static struct regulator_consumer_supply ldo1_consumer[] = {
-	REGULATOR_SUPPLY("vadc_3.3v", NULL),
+	REGULATOR_SUPPLY("samsung-adc-v3", NULL),
 };
 static struct regulator_consumer_supply ldo3_consumer[] = {
 	REGULATOR_SUPPLY("vusb_1.1v", "s5p-ehci"),
@@ -323,7 +324,7 @@ static struct regulator_init_data max8997_led_movie_data = {
 
 
 static struct max8997_regulator_data max8997_regulators[] = {
-//	{ MAX8997_LDO1,		&ldo1_data },
+	{ MAX8997_LDO1,		&ldo1_data },
 	{ MAX8997_LDO3,		&ldo3_data },
 	{ MAX8997_LDO4,		&ldo4_data },
 	{ MAX8997_LDO5,		&ldo5_data },
@@ -357,13 +358,14 @@ struct max8997_platform_data max8997_pdata = {
 	.regulators	= max8997_regulators,
 
 	.wakeup = true,
-	.buck1_gpiodvs	= false,
-	.buck2_gpiodvs	= false,
+	.buck1_gpiodvs	= true,
+	.buck2_gpiodvs	= true,
 	.buck5_gpiodvs	= false,
 
 	.ignore_gpiodvs_side_effect = true,
 
-	.buck125_default_idx = 0x0,
+	.buck125_default_idx = 0x1,
+	.irq_base		= IRQ_GPIO_END + 1,
 
 	.buck125_gpios[0]	= EXYNOS4_GPX1(6),
 	.buck125_gpios[1]	= EXYNOS4_GPX1(7),
