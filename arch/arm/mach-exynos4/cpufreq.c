@@ -119,7 +119,7 @@ struct cpufreq_voltage_table {
 static struct cpufreq_voltage_table exynos4_volt_table[CPUFREQ_LEVEL_END] = {
 	{
 		.index		= L0,
-		.arm_volt	= 1350000,
+		.arm_volt	= 1450000,
 	}, {
 		.index		= L1,
 		.arm_volt	= 1300000,
@@ -131,7 +131,7 @@ static struct cpufreq_voltage_table exynos4_volt_table[CPUFREQ_LEVEL_END] = {
 		.arm_volt	= 1100000,
 	}, {
 		.index		= L4,
-		.arm_volt	= 1050000,
+		.arm_volt	= 1100000,
 	},
 };
 
@@ -277,6 +277,8 @@ static void exynos4_set_frequency(unsigned int old_index, unsigned int new_index
 			exynos4_set_clkdiv(new_index);
 		}
 	}
+	
+	printk("EXYNOS4: CPU SPEED CHANGED: CPU0 : %d / CPU1 : %d\n", exynos4_getspeed(0), exynos4_getspeed(1));
 }
 
 static int exynos4_target(struct cpufreq_policy *policy,

@@ -14,6 +14,7 @@
 #include <linux/pwm_backlight.h>
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
+#include <linux/i2c/mcs.h>
 #include <linux/gpio_keys.h>
 #include <linux/delay.h>
 #include <linux/rfkill-gpio.h>
@@ -232,6 +233,72 @@ static void __init smdk4210_init_battery_gauge(void)
 	i2c_register_board_info(I2C_GPIO_BUS_GAUGE,
 		i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
 }
+
+/***
+ * touch keys
+ */
+static struct i2c_gpio_platform_data i2c_gpio_touchkey_data = {
+	.sda_pin	= GPIO_3_TOUCH_SDA,
+	.scl_pin	= GPIO_3_TOUCH_SCL,
+	.udelay		= 2,
+};
+
+static struct platform_device i2c_gpio_touchkey = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_BUS_TOUCHKEY,
+	.dev		= {
+		.platform_data	= &i2c_gpio_touchkey_data,
+	},
+};
+
+static void smdk4210_mcs_power(bool on) {
+	struct regulator *regulator;
+	regulator = regulator_get(NULL, "touchkey");
+	if (IS_ERR(regulator)) {
+		pr_err("%s: failed to get regulator\n", __func__);
+		return;
+	}
+
+	if (on) {
+		regulator_enable(regulator);
+	} else {
+		regulator_disable(regulator);
+	}
+
+	regulator_put(regulator);
+}
+
+static uint32_t touchkey_keymap[] = {
+	MCS_KEY_MAP(0, KEY_MENU),
+	MCS_KEY_MAP(1, KEY_BACK),
+};
+
+static struct mcs_platform_data touchkey_data = {
+	.keymap		= touchkey_keymap,
+	.keymap_size	= ARRAY_SIZE(touchkey_keymap),
+	.key_maxval	= 2,
+	.poweron = smdk4210_mcs_power,
+};
+
+static struct i2c_board_info i2c_gpio_touchkey_devs[] __initdata = {
+	{
+		I2C_BOARD_INFO("mcs5000_touchkey", 0x20),
+		.platform_data = &touchkey_data,
+	},
+};
+
+static void __init smdk4210_init_touchkey(void)
+{
+	gpio_request(GPIO_3_TOUCH_INT, "3_TOUCH_INT");
+	s5p_register_gpio_interrupt(GPIO_3_TOUCH_INT);
+	s3c_gpio_cfgpin(GPIO_3_TOUCH_INT, S3C_GPIO_SFN(0xf));
+	s3c_gpio_setpull(GPIO_3_TOUCH_INT, S3C_GPIO_PULL_UP);
+	i2c_gpio_touchkey_devs[0].irq = gpio_to_irq(GPIO_3_TOUCH_INT);
+
+	i2c_register_board_info(I2C_GPIO_BUS_TOUCHKEY,
+		i2c_gpio_touchkey_devs, ARRAY_SIZE(i2c_gpio_touchkey_devs));
+}
+
 
 /******
  * MAX8997 
@@ -472,6 +539,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_usbgadget,
 
 	&i2c_gpio_gauge,
+	&i2c_gpio_touchkey,
 	&smdk4210_device_gpiokeys,
 };
 
@@ -609,6 +677,7 @@ static void __init smdk4210_machine_init(void)
 
 	smdk4210_otg_init();
 	smdk4210_ohci_init();
+	smdk4210_init_touchkey();
 	clk_xusbxti.rate = 24000000;
 	smdk4210_init_battery_gauge();
 	smdk4210_ehci_init();
