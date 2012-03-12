@@ -36,7 +36,7 @@ static struct regulator_consumer_supply ldo10_consumer[] = {
 	REGULATOR_SUPPLY("vpll_1.1v", NULL),
 };
 static struct regulator_consumer_supply ldo11_consumer[] = {
-	REGULATOR_SUPPLY("touch", NULL),
+	REGULATOR_SUPPLY("touchkey", NULL),
 };
 static struct regulator_consumer_supply ldo12_consumer[] = {
 	REGULATOR_SUPPLY("vt_cam_1.8v", NULL),
@@ -60,7 +60,7 @@ static struct regulator_consumer_supply ldo17_rev04_consumer[] = {
 	REGULATOR_SUPPLY("vtf_2.8v", NULL),
 };
 static struct regulator_consumer_supply ldo18_consumer[] = {
-	REGULATOR_SUPPLY("touch_led", NULL),
+	REGULATOR_SUPPLY("touch_led", "leds-regulator.0"),
 };
 static struct regulator_consumer_supply ldo21_consumer[] = {
 	REGULATOR_SUPPLY("vddq_m1m2", NULL),
@@ -69,10 +69,10 @@ static struct regulator_consumer_supply buck1_consumer[] = {
 	REGULATOR_SUPPLY("vdd_arm", NULL),
 };
 static struct regulator_consumer_supply buck2_consumer[] = {
-	REGULATOR_SUPPLY("vdd_int", NULL),
+	REGULATOR_SUPPLY("vdd_int", "exynos4210-busfreq.0"),
 };
 static struct regulator_consumer_supply buck3_consumer[] = {
-	REGULATOR_SUPPLY("vdd_g3d", NULL),
+	REGULATOR_SUPPLY("vdd_g3d", "mali_dev.0"),
 };
 static struct regulator_consumer_supply buck4_consumer[] = {
 	REGULATOR_SUPPLY("cam_isp_core", NULL),
@@ -371,13 +371,13 @@ struct max8997_platform_data max8997_pdata = {
 	.buck125_gpios[1]	= EXYNOS4_GPX1(7),
 	.buck125_gpios[2]	= EXYNOS4_GPX0(4),
 
-	.buck1_voltage[0]	= 1200000,
-	.buck1_voltage[1]	= 1200000,
-	.buck1_voltage[2]	= 1150000,
-	.buck1_voltage[3]	= 1100000,
-	.buck1_voltage[4]	= 1050000,
-	.buck1_voltage[5]	= 1000000,
-	.buck1_voltage[6]	= 950000,
+	.buck1_voltage[0]	= 1350000,
+	.buck1_voltage[1]	= 1300000,
+	.buck1_voltage[2]	= 1250000,
+	.buck1_voltage[3]	= 1200000,
+	.buck1_voltage[4]	= 1150000,
+	.buck1_voltage[5]	= 1100000,
+	.buck1_voltage[6]	= 1000000,
 	.buck1_voltage[7]	= 950000,
 
 	.buck2_voltage[0]	= 1100000,
