@@ -251,7 +251,7 @@ static struct platform_device i2c_gpio_touchkey = {
 	},
 };
 
-static void smdk4210_mcs_power(bool on) {
+static void smdk4210_touchkey_power(bool on) {
 	struct regulator *regulator;
 	regulator = regulator_get(NULL, "touch");
 	if (IS_ERR(regulator)) {
@@ -270,22 +270,9 @@ static void smdk4210_mcs_power(bool on) {
 	regulator_put(regulator);
 }
 
-static uint32_t touchkey_keymap[] = {
-	MCS_KEY_MAP(0, KEY_MENU),
-	MCS_KEY_MAP(1, KEY_BACK),
-};
-
-static struct mcs_platform_data touchkey_data = {
-	.keymap		= touchkey_keymap,
-	.keymap_size	= ARRAY_SIZE(touchkey_keymap),
-	.key_maxval	= 2,
-	.poweron = smdk4210_mcs_power,
-};
-
 static struct i2c_board_info i2c_gpio_touchkey_devs[] __initdata = {
 	{
-		I2C_BOARD_INFO("mcs5000_touchkey", 0x20),
-		.platform_data = &touchkey_data,
+		I2C_BOARD_INFO("melfas_touchkey", 0x20),
 	},
 };
 
@@ -296,7 +283,7 @@ static void __init smdk4210_init_touchkey(void)
 	s3c_gpio_cfgpin(GPIO_3_TOUCH_INT, S3C_GPIO_SFN(0xf));
 	s3c_gpio_setpull(GPIO_3_TOUCH_INT, S3C_GPIO_PULL_UP);
 	i2c_gpio_touchkey_devs[0].irq = gpio_to_irq(GPIO_3_TOUCH_INT);
-	smdk4210_mcs_power(true);
+	smdk4210_touchkey_power(true);
 	printk("MCS TOUCHKEY: They are initialized!\n");
 	i2c_register_board_info(I2C_GPIO_BUS_TOUCHKEY, i2c_gpio_touchkey_devs, ARRAY_SIZE(i2c_gpio_touchkey_devs));
 }
@@ -588,7 +575,7 @@ static void __init smdk4210_machine_init(void)
 	c1_config_gpio_table();
 	c1_config_sleep_gpio_table();
 	
-	//s3c_pm_init();
+	s3c_pm_init();
 	
 	exynos4_pd_enable(&exynos4_device_pd[PD_MFC].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_G3D].dev);
