@@ -33,6 +33,7 @@ build ()
     local module
     [ x = "x$NO_RM" ] && rm -fr "$target_dir"
     mkdir -p "$target_dir/usr"
+    ln -s "$KERNEL_DIR/usr/initramfs" "$target_dir/usr"
     cp "$KERNEL_DIR/usr/"*.list "$target_dir/usr"
     sed "s|usr/|$KERNEL_DIR/usr/|g" -i "$target_dir/usr/"*.list
     [ x = "x$NO_DEFCONFIG" ] && mka ARCH=arm -C "$KERNEL_DIR" O="$target_dir" smdk4210_defconfig HOSTCC="$CCACHE gcc"
