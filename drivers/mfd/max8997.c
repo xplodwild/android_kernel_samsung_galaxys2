@@ -161,6 +161,9 @@ static int max8997_i2c_probe(struct i2c_client *i2c,
 	 * check the return value
 	 */
 
+	/* MAX8997 has a power button input. */
+        device_init_wakeup(max8997->dev, pdata->wakeup);
+
 	if (ret < 0)
 		goto err_mfd;
 

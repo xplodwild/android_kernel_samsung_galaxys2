@@ -481,7 +481,7 @@ static int __devinit max8997_rtc_probe(struct platform_device *pdev)
 	info->dev = &pdev->dev;
 	info->max8997 = max8997;
 	info->rtc = max8997->rtc;
-	info->irq = max8997->irq_base + MAX8997_IRQ_RTCA1;
+	info->irq = max8997->irq_base + MAX8997_PMICIRQ_RTCA1;
 
 	platform_set_drvdata(pdev, info);
 
