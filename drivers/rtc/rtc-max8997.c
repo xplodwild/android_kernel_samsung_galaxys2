@@ -165,9 +165,7 @@ static int max8997_rtc_read_time(struct device *dev, struct rtc_time *tm)
 	u8 data[RTC_NR_TIME];
 	int ret;
 
-	mutex_lock(&info->lock);
 	ret = max8997_bulk_read(info->rtc, MAX8997_RTC_SEC, RTC_NR_TIME, data);
-	mutex_unlock(&info->lock);
 
 	if (ret < 0) {
 		dev_err(info->dev, "%s: fail to read time reg(%d)\n", __func__,
@@ -190,7 +188,6 @@ static int max8997_rtc_set_time(struct device *dev, struct rtc_time *tm)
 	if (ret < 0)
 		return ret;
 
-	mutex_lock(&info->lock);
 
 	ret = max8997_bulk_write(info->rtc, MAX8997_RTC_SEC, RTC_NR_TIME, data);
 	if (ret < 0) {
@@ -201,7 +198,6 @@ static int max8997_rtc_set_time(struct device *dev, struct rtc_time *tm)
 
 	ret = max8997_rtc_set_update_reg(info);
 out:
-	mutex_unlock(&info->lock);
 	return ret;
 }
 
@@ -212,7 +208,6 @@ static int max8997_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 	u8 val;
 	int i, ret;
 
-	mutex_lock(&info->lock);
 
 	ret = max8997_bulk_read(info->rtc, MAX8997_ALARM1_SEC, RTC_NR_TIME,
 			data);
@@ -244,7 +239,6 @@ static int max8997_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 		alrm->pending = 1;
 
 out:
-	mutex_unlock(&info->lock);
 	return 0;
 }
 
@@ -252,9 +246,6 @@ static int max8997_rtc_stop_alarm(struct max8997_rtc_info *info)
 {
 	u8 data[RTC_NR_TIME];
 	int ret, i;
-
-	if (!mutex_is_locked(&info->lock))
-		dev_warn(info->dev, "%s: should have mutex locked\n", __func__);
 
 	ret = max8997_bulk_read(info->rtc, MAX8997_ALARM1_SEC, RTC_NR_TIME,
 				data);
@@ -284,10 +275,7 @@ static int max8997_rtc_start_alarm(struct max8997_rtc_info *info)
 {
 	u8 data[RTC_NR_TIME];
 	int ret;
-
-	if (!mutex_is_locked(&info->lock))
-		dev_warn(info->dev, "%s: should have mutex locked\n", __func__);
-
+	
 	ret = max8997_bulk_read(info->rtc, MAX8997_ALARM1_SEC, RTC_NR_TIME,
 				data);
 	if (ret < 0) {
@@ -330,8 +318,6 @@ static int max8997_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 	if (ret < 0)
 		return ret;
 
-	mutex_lock(&info->lock);
-
 	ret = max8997_rtc_stop_alarm(info);
 	if (ret < 0)
 		goto out;
@@ -351,7 +337,6 @@ static int max8997_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 	if (alrm->enabled)
 		ret = max8997_rtc_start_alarm(info);
 out:
-	mutex_unlock(&info->lock);
 	return ret;
 }
 
@@ -361,12 +346,10 @@ static int max8997_rtc_alarm_irq_enable(struct device *dev,
 	struct max8997_rtc_info *info = dev_get_drvdata(dev);
 	int ret;
 
-	mutex_lock(&info->lock);
 	if (enabled)
 		ret = max8997_rtc_start_alarm(info);
 	else
 		ret = max8997_rtc_stop_alarm(info);
-	mutex_unlock(&info->lock);
 
 	return ret;
 }
@@ -476,8 +459,6 @@ static int __devinit max8997_rtc_probe(struct platform_device *pdev)
 	if (!info)
 		return -ENOMEM;
 
-	mutex_init(&info->lock);
-	mutex_lock(&info->lock);
 	info->dev = &pdev->dev;
 	info->max8997 = max8997;
 	info->rtc = max8997->rtc;
@@ -496,10 +477,9 @@ static int __devinit max8997_rtc_probe(struct platform_device *pdev)
 	max8997_rtc_enable_smpl(info, true);
 
 	device_init_wakeup(&pdev->dev, 1);
-
 	info->rtc_dev = rtc_device_register("max8997-rtc", &pdev->dev,
 			&max8997_rtc_ops, THIS_MODULE);
-
+			
 	if (IS_ERR(info->rtc_dev)) {
 		ret = PTR_ERR(info->rtc_dev);
 		dev_err(&pdev->dev, "Failed to register RTC device: %d\n", ret);
@@ -510,6 +490,7 @@ static int __devinit max8997_rtc_probe(struct platform_device *pdev)
 
 	ret = request_threaded_irq(info->irq, NULL, max8997_rtc_alarm_irq, 0,
 			"rtc-alarm0", info);
+
 	if (ret < 0) {
 		dev_err(&pdev->dev, "Failed to request alarm IRQ: %d: %d\n",
 			info->irq, ret);
@@ -518,11 +499,9 @@ static int __devinit max8997_rtc_probe(struct platform_device *pdev)
 
 	goto out;
 err_rtc:
-	mutex_unlock(&info->lock);
 	kfree(info);
 	return ret;
 out:
-	mutex_unlock(&info->lock);
 	return ret;
 }
 
