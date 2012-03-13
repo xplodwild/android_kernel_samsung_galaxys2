@@ -36,7 +36,7 @@ static struct regulator_consumer_supply ldo10_consumer[] = {
 	REGULATOR_SUPPLY("vpll_1.1v", NULL),
 };
 static struct regulator_consumer_supply ldo11_consumer[] = {
-	REGULATOR_SUPPLY("touchkey", NULL),
+	REGULATOR_SUPPLY("touch", NULL),
 };
 static struct regulator_consumer_supply ldo12_consumer[] = {
 	REGULATOR_SUPPLY("vt_cam_1.8v", NULL),
@@ -60,7 +60,7 @@ static struct regulator_consumer_supply ldo17_rev04_consumer[] = {
 	REGULATOR_SUPPLY("vtf_2.8v", NULL),
 };
 static struct regulator_consumer_supply ldo18_consumer[] = {
-	REGULATOR_SUPPLY("touch_led", "leds-regulator.0"),
+	REGULATOR_SUPPLY("touch_led", NULL),
 };
 static struct regulator_consumer_supply ldo21_consumer[] = {
 	REGULATOR_SUPPLY("vddq_m1m2", NULL),
@@ -69,10 +69,10 @@ static struct regulator_consumer_supply buck1_consumer[] = {
 	REGULATOR_SUPPLY("vdd_arm", NULL),
 };
 static struct regulator_consumer_supply buck2_consumer[] = {
-	REGULATOR_SUPPLY("vdd_int", "exynos4210-busfreq.0"),
+	REGULATOR_SUPPLY("vdd_int", NULL),
 };
 static struct regulator_consumer_supply buck3_consumer[] = {
-	REGULATOR_SUPPLY("vdd_g3d", "mali_dev.0"),
+	REGULATOR_SUPPLY("vdd_g3d", NULL),
 };
 static struct regulator_consumer_supply buck4_consumer[] = {
 	REGULATOR_SUPPLY("cam_isp_core", NULL),
