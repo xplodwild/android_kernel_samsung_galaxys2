@@ -72,9 +72,9 @@ extern void c1_config_gpio_table(void);
 extern void c1_config_sleep_gpio_table(void);
 
 enum i2c_bus_ids {
-	I2C_GPIO_BUS_TOUCHKEY = 10,
+	I2C_GPIO_BUS_TOUCHKEY = 8,
+	I2C_GPIO_BUS_GAUGE = 9,
 	I2C_GPIO_BUS_PROX = 11,
-	I2C_GPIO_BUS_GAUGE,
 	I2C_GPIO_BUS_USB,
 	I2C_GPIO_BUS_MHL,
 	I2C_GPIO_BUS_FM,
@@ -231,7 +231,7 @@ static void __init smdk4210_init_battery_gauge(void)
 	i2c_gpio_gauge_devs[0].irq = gpio_to_irq(GPIO_FUEL_ALERT);
 	
 	i2c_register_board_info(I2C_GPIO_BUS_GAUGE,
-		i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
+	i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
 }
 
 /***
@@ -253,17 +253,17 @@ static struct platform_device i2c_gpio_touchkey = {
 
 static void smdk4210_mcs_power(bool on) {
 	struct regulator *regulator;
-	regulator = regulator_get(NULL, "touchkey");
+	regulator = regulator_get(NULL, "touch");
 	if (IS_ERR(regulator)) {
 		pr_err("%s: failed to get regulator\n", __func__);
 		return;
 	}
 
 	if (on) {
-		printk("MCS TOUCHKEY: Regulator ENABLE");
+		printk("MCS TOUCHKEY: Regulator ENABLE\n");
 		regulator_enable(regulator);
 	} else {
-		printk("MCS TOUCHKEY: Regulator DISABLE");
+		printk("MCS TOUCHKEY: Regulator DISABLE\n");
 		regulator_disable(regulator);
 	}
 
@@ -284,7 +284,7 @@ static struct mcs_platform_data touchkey_data = {
 
 static struct i2c_board_info i2c_gpio_touchkey_devs[] __initdata = {
 	{
-		I2C_BOARD_INFO("melfas_touchkey", 0x20),
+		I2C_BOARD_INFO("mcs5000_touchkey", 0x20),
 		.platform_data = &touchkey_data,
 	},
 };
@@ -297,7 +297,7 @@ static void __init smdk4210_init_touchkey(void)
 	s3c_gpio_setpull(GPIO_3_TOUCH_INT, S3C_GPIO_PULL_UP);
 	i2c_gpio_touchkey_devs[0].irq = gpio_to_irq(GPIO_3_TOUCH_INT);
 	smdk4210_mcs_power(true);
-	printk("MCS TOUCHKEY: They are initialized!");
+	printk("MCS TOUCHKEY: They are initialized!\n");
 	i2c_register_board_info(I2C_GPIO_BUS_TOUCHKEY, i2c_gpio_touchkey_devs, ARRAY_SIZE(i2c_gpio_touchkey_devs));
 }
 
@@ -652,7 +652,6 @@ static void __init smdk4210_machine_init(void)
 	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));*/
 	
 	smdk4210_init_touchkey();
-	
 	i2c_register_board_info(9, i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
 	
 	s3cfb_set_platdata(NULL);
