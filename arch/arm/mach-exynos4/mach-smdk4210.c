@@ -260,8 +260,10 @@ static void smdk4210_mcs_power(bool on) {
 	}
 
 	if (on) {
+		printk("MCS TOUCHKEY: Regulator ENABLE");
 		regulator_enable(regulator);
 	} else {
+		printk("MCS TOUCHKEY: Regulator DISABLE");
 		regulator_disable(regulator);
 	}
 
@@ -282,7 +284,7 @@ static struct mcs_platform_data touchkey_data = {
 
 static struct i2c_board_info i2c_gpio_touchkey_devs[] __initdata = {
 	{
-		I2C_BOARD_INFO("mcs5000_touchkey", 0x20),
+		I2C_BOARD_INFO("melfas_touchkey", 0x20),
 		.platform_data = &touchkey_data,
 	},
 };
@@ -294,9 +296,9 @@ static void __init smdk4210_init_touchkey(void)
 	s3c_gpio_cfgpin(GPIO_3_TOUCH_INT, S3C_GPIO_SFN(0xf));
 	s3c_gpio_setpull(GPIO_3_TOUCH_INT, S3C_GPIO_PULL_UP);
 	i2c_gpio_touchkey_devs[0].irq = gpio_to_irq(GPIO_3_TOUCH_INT);
-
-	i2c_register_board_info(I2C_GPIO_BUS_TOUCHKEY,
-		i2c_gpio_touchkey_devs, ARRAY_SIZE(i2c_gpio_touchkey_devs));
+	smdk4210_mcs_power(true);
+	printk("MCS TOUCHKEY: They are initialized!");
+	i2c_register_board_info(I2C_GPIO_BUS_TOUCHKEY, i2c_gpio_touchkey_devs, ARRAY_SIZE(i2c_gpio_touchkey_devs));
 }
 
 
@@ -649,6 +651,8 @@ static void __init smdk4210_machine_init(void)
 	/*s3c_i2c7_set_platdata(NULL);											TVOUT
 	i2c_register_board_info(7, i2c_devs7, ARRAY_SIZE(i2c_devs7));*/
 	
+	smdk4210_init_touchkey();
+	
 	i2c_register_board_info(9, i2c_gpio_gauge_devs, ARRAY_SIZE(i2c_gpio_gauge_devs));
 	
 	s3cfb_set_platdata(NULL);
@@ -677,7 +681,6 @@ static void __init smdk4210_machine_init(void)
 
 	smdk4210_otg_init();
 	smdk4210_ohci_init();
-	smdk4210_init_touchkey();
 	clk_xusbxti.rate = 24000000;
 	smdk4210_init_battery_gauge();
 	smdk4210_ehci_init();
