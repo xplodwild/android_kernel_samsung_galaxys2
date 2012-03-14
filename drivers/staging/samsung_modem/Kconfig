@@ -1,6 +1,0 @@
-config USB_CDC_SVNET
-	tristate "CDC Svnet support"
-	select PHONET
-	help
-	  Choose this option to support the Samsung virtual network interface
-	  using Phonet.

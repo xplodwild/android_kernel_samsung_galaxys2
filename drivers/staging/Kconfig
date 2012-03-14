@@ -162,6 +162,4 @@ source "drivers/staging/mei/Kconfig"
 
 source "drivers/staging/nvec/Kconfig"
 
-source "drivers/staging/samsung_modem/Kconfig"
-
 endif # STAGING
