@@ -295,6 +295,24 @@ static void __init smdk4210_init_touchkey(void)
 
 extern struct max8997_platform_data max8997_pdata;
 
+int max8997_power_set_charger(int insert)
+{
+	struct power_supply *psy = power_supply_get_by_name("battery");
+	union power_supply_propval value;
+
+	if (!psy) {
+		pr_err("%s: fail to get battery ps\n", __func__);
+		return -ENODEV;
+	}
+
+	if (insert)
+		value.intval = POWER_SUPPLY_TYPE_MAINS;
+	else
+		value.intval = POWER_SUPPLY_TYPE_BATTERY;
+
+	return psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE, &value);
+}
+
 static struct i2c_board_info i2c_devs5[] __initdata = {
 	{
 		I2C_BOARD_INFO("max8997", (0xCC >> 1)),

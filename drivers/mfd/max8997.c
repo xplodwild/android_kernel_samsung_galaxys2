@@ -23,7 +23,9 @@
 
 #include <linux/slab.h>
 #include <linux/i2c.h>
+#include <linux/interrupt.h>
 #include <linux/pm_runtime.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/mfd/core.h>
 #include <linux/mfd/max8997.h>
@@ -37,11 +39,11 @@
 
 static struct mfd_cell max8997_devs[] = {
 	{ .name = "max8997-pmic", },
-	{ .name = "max8997-rtc", },
 	{ .name = "max8997-battery", },
 	{ .name = "max8997-haptic", },
 	{ .name = "max8997-muic", },
-	{ .name = "max8997-flash", },
+	{ .name = "max8997-led", .id = 1 },
+	{ .name = "max8997-led", .id = 2 },
 };
 
 int max8997_read_reg(struct i2c_client *i2c, u8 reg, u8 *dest)
@@ -135,22 +137,24 @@ static int max8997_i2c_probe(struct i2c_client *i2c,
 	max8997->dev = &i2c->dev;
 	max8997->i2c = i2c;
 	max8997->type = id->driver_data;
+	max8997->irq = i2c->irq;
 
 	if (!pdata)
 		goto err;
 
-	max8997->wakeup = pdata->wakeup;
+	max8997->irq_base = pdata->irq_base;
+	max8997->ono = pdata->ono;
 
 	mutex_init(&max8997->iolock);
 
-	max8997->rtc = i2c_new_dummy(i2c->adapter, I2C_ADDR_RTC);
-	i2c_set_clientdata(max8997->rtc, max8997);
 	max8997->haptic = i2c_new_dummy(i2c->adapter, I2C_ADDR_HAPTIC);
 	i2c_set_clientdata(max8997->haptic, max8997);
 	max8997->muic = i2c_new_dummy(i2c->adapter, I2C_ADDR_MUIC);
 	i2c_set_clientdata(max8997->muic, max8997);
 
 	pm_runtime_set_active(max8997->dev);
+
+	max8997_irq_init(max8997);
 
 	mfd_add_devices(max8997->dev, -1, max8997_devs,
 			ARRAY_SIZE(max8997_devs),
@@ -161,11 +165,11 @@ static int max8997_i2c_probe(struct i2c_client *i2c,
 	 * check the return value
 	 */
 
-	/* MAX8997 has a power button input. */
-        device_init_wakeup(max8997->dev, pdata->wakeup);
-
 	if (ret < 0)
 		goto err_mfd;
+
+	/* MAX8997 has a power button input. */
+	device_init_wakeup(max8997->dev, pdata->wakeup);
 
 	return ret;
 
@@ -173,7 +177,6 @@ err_mfd:
 	mfd_remove_devices(max8997->dev);
 	i2c_unregister_device(max8997->muic);
 	i2c_unregister_device(max8997->haptic);
-	i2c_unregister_device(max8997->rtc);
 err:
 	kfree(max8997);
 	return ret;
@@ -186,7 +189,6 @@ static int max8997_i2c_remove(struct i2c_client *i2c)
 	mfd_remove_devices(max8997->dev);
 	i2c_unregister_device(max8997->muic);
 	i2c_unregister_device(max8997->haptic);
-	i2c_unregister_device(max8997->rtc);
 	kfree(max8997);
 
 	return 0;
@@ -396,7 +398,29 @@ static int max8997_restore(struct device *dev)
 	return 0;
 }
 
+static int max8997_suspend(struct device *dev)
+{
+	struct i2c_client *i2c = container_of(dev, struct i2c_client, dev);
+	struct max8997_dev *max8997 = i2c_get_clientdata(i2c);
+
+	if (device_may_wakeup(dev))
+		irq_set_irq_wake(max8997->irq, 1);
+	return 0;
+}
+
+static int max8997_resume(struct device *dev)
+{
+	struct i2c_client *i2c = container_of(dev, struct i2c_client, dev);
+	struct max8997_dev *max8997 = i2c_get_clientdata(i2c);
+
+	if (device_may_wakeup(dev))
+		irq_set_irq_wake(max8997->irq, 0);
+	return max8997_irq_resume(max8997);
+}
+
 const struct dev_pm_ops max8997_pm = {
+	.suspend = max8997_suspend,
+	.resume = max8997_resume,
 	.freeze = max8997_freeze,
 	.restore = max8997_restore,
 };
