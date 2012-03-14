@@ -353,7 +353,12 @@ static struct max8997_regulator_data max8997_regulators[] = {
 	{ MAX8997_CHARGER,	&max8997_led_movie_data },
 };
 
-extern int max8997_power_set_charger(int insert);
+static int max8997_power_set_charger(bool attached,
+	enum max8997_muic_charger_type type)
+{
+	printk("%s: type %d, attached %d\n", __func__, type, attached);
+}
+
 static struct max8997_muic_platform_data max8997_muic_pdata = {
 	//.usb_callback = i9100_muic_usb_callback,
 	.charger_callback = max8997_power_set_charger,
@@ -377,7 +382,7 @@ struct max8997_platform_data max8997_pdata = {
 	.ignore_gpiodvs_side_effect = true,
 
 	.buck125_default_idx = 0x0,
-	.irq_base		= IRQ_GPIO_END + 1,
+	.irq_base		= IRQ_GPIO_END,
 
 	.buck125_gpios[0]	= EXYNOS4_GPX1(6),
 	.buck125_gpios[1]	= EXYNOS4_GPX1(7),

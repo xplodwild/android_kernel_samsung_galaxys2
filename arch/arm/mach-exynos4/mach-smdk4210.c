@@ -25,6 +25,7 @@
 #endif
 #include <linux/regulator/machine.h>
 #include <linux/regulator/fixed.h>
+#include <linux/mfd/max8997.h>
 #include <linux/power/max17042_battery.h>
 #include <asm/mach/arch.h>
 #include <asm/mach-types.h>
@@ -295,8 +296,10 @@ static void __init smdk4210_init_touchkey(void)
 
 extern struct max8997_platform_data max8997_pdata;
 
-int max8997_power_set_charger(int insert)
+int max8997_muic_charger_cb(bool attached, enum max8997_muic_charger_type cable_type)
 {
+	printk("MAX8997 MUIC UPDATE: attached %d, cable_type %d", attached, cable_type);
+
 	struct power_supply *psy = power_supply_get_by_name("battery");
 	union power_supply_propval value;
 
@@ -305,13 +308,32 @@ int max8997_power_set_charger(int insert)
 		return -ENODEV;
 	}
 
-	if (insert)
-		value.intval = POWER_SUPPLY_TYPE_MAINS;
-	else
+	switch (cable_type) {
+	case MAX8997_CHARGER_TYPE_NONE:
 		value.intval = POWER_SUPPLY_TYPE_BATTERY;
+		break;
+	case MAX8997_CHARGER_TYPE_USB:
+		value.intval = POWER_SUPPLY_TYPE_USB;
+		break;
+	case MAX8997_CHARGER_TYPE_DOWNSTREAM_PORT:
+		value.intval = POWER_SUPPLY_TYPE_USB_ACA;
+		break;
+	case MAX8997_CHARGER_TYPE_DEDICATED_CHG:
+	case MAX8997_CHARGER_TYPE_500MA:
+	case MAX8997_CHARGER_TYPE_1A:
+		value.intval = POWER_SUPPLY_TYPE_MAINS;
+		break;
+	default:
+		pr_err("%s: invalid type:%d\n", __func__, cable_type);
+		return -EINVAL;
+	}
+
+/*	if (charging_cbs.tsp_set_charging_cable)
+		charging_cbs.tsp_set_charging_cable(value.intval);*/
 
 	return psy->set_property(psy, POWER_SUPPLY_PROP_ONLINE, &value);
 }
+
 
 static struct i2c_board_info i2c_devs5[] __initdata = {
 	{
@@ -328,6 +350,38 @@ static void __init smdk4210_init_pmic(void) {
 	i2c_devs5[0].irq = gpio_to_irq(GPIO_PMIC_IRQ);
 
 }
+
+/******************************************************************************
+ * WLAN voltage regulator
+ ******************************************************************************/
+static struct regulator_consumer_supply wlan_supplies[] = {
+	REGULATOR_SUPPLY("vmmc", "s3c-sdhci.3"),
+};
+
+static struct regulator_init_data wlan_fixed_voltage_init_data = {
+	.constraints		= {
+		.name		= "WLAN_VDD",
+		.valid_ops_mask	= REGULATOR_CHANGE_STATUS,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(wlan_supplies),
+	.consumer_supplies	= wlan_supplies,
+};
+
+static struct fixed_voltage_config wlan_fixed_voltage_config = {
+	.supply_name		= "WLAN_EN",
+	.microvolts		= 3300000,
+	.gpio			= GPIO_WLAN_EN,
+	.enable_high		= true,
+	.init_data		= &wlan_fixed_voltage_init_data,
+};
+
+static struct platform_device wlan_fixed_voltage = {
+	.name			= "reg-fixed-voltage",
+	.id			= 1,
+	.dev			= {
+		.platform_data	= &wlan_fixed_voltage_config,
+	},
+};
 
 /* I2C0 */
 
@@ -386,7 +440,13 @@ static struct s3c_sdhci_platdata smdk4210_hsmmc2_pdata __initdata = {
 };
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
-	.cd_type					= S3C_SDHCI_CD_PERMANENT,
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
+	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.max_width		= 4,
+	.host_caps		= MMC_CAP_4_BIT_DATA |
+				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
+	.cfg_gpio = exynos4_setup_sdhci3_cfg_gpio,
+
 };
 
 static struct s3c_mshci_platdata smdk4210_mshc_pdata __initdata = {
@@ -513,6 +573,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&exynos4_device_pd[PD_G3D],
 	&exynos4_device_pd[PD_LCD0],
 	&exynos4_device_pd[PD_TV],
+	&wlan_fixed_voltage,
 	&s3c_device_fb,
 	&s3c_device_i2c5,
 	&s3c_device_i2c0,
@@ -594,6 +655,9 @@ static void __init smdk4210_machine_init(void)
 	c1_config_sleep_gpio_table();
 	
 	s3c_pm_init();
+	
+	s3c_gpio_cfgpin(GPIO_WLAN_EN, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_WLAN_EN, S3C_GPIO_PULL_NONE);
 	
 	exynos4_pd_enable(&exynos4_device_pd[PD_MFC].dev);
 	exynos4_pd_enable(&exynos4_device_pd[PD_G3D].dev);

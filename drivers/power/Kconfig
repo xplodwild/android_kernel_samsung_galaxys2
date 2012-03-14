@@ -185,6 +185,12 @@ config CHARGER_PCF50633
 	help
 	 Say Y to include support for NXP PCF50633 Main Battery Charger.
 
+config CHARGER_MAX8997
+	tristate "MAX8997 charger"
+	depends on I2C
+	help
+	  Say Y to include support for MAX8997 Battery Charger
+
 config BATTERY_JZ4740
 	tristate "Ingenic JZ4740 battery"
 	depends on MACH_JZ4740
