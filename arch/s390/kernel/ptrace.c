@@ -931,6 +931,7 @@ static const struct user_regset s390_regsets[] = {
 		.size = sizeof(long),
 		.align = sizeof(long),
 		.get = s390_last_break_get,
+		.set = s390_last_break_set,
 	},
 #endif
 };
@@ -1119,6 +1120,7 @@ static const struct user_regset s390_compat_regsets[] = {
 		.size = sizeof(long),
 		.align = sizeof(long),
 		.get = s390_compat_last_break_get,
+		.set = s390_compat_last_break_set,
 	},
 	[REGSET_GENERAL_EXTENDED] = {
 		.core_note_type = NT_S390_HIGH_GPRS,
