@@ -111,6 +111,9 @@ on fs
     # verfiy filesystem (UMS)
 	  exec sformat /dev/block/mmcblk0p11 vfat
 
+    mount vfat /dev/block/mmcblk0p11 /mnt/sdcard
+
+
 # SEC_DMCRYPT move mounting efs befor apply_disk_policy, and set group id to system
     mkdir /efs
     #mount rfs /dev/block/mmcblk0p1 /efs nosuid nodev check=no

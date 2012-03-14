@@ -135,7 +135,7 @@ static struct mxt_platform_data mxt_pdata = {
 	.y_line			= 11,
 	.x_size			= 480,
 	.y_size			= 800,
-	.blen			= 0x11,
+	.blen			= 0x1,
 	.threshold		= 0x18,
 	.voltage		= 2800000,		/* 2.8V */
 	.orient			= MXT_DIAGONAL,
@@ -144,7 +144,7 @@ static struct mxt_platform_data mxt_pdata = {
 
 static struct i2c_board_info i2c_devs3[] __initdata = {
 	{
-		I2C_BOARD_INFO("atmel_mxt_ts", 0x4a),
+		I2C_BOARD_INFO("mXT224", 0x4a),
 		.platform_data = &mxt_pdata,
 		.irq		= IRQ_EINT(4),
 	},
