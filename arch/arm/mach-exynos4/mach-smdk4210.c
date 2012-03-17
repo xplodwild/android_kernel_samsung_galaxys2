@@ -164,6 +164,14 @@ static void __init smdk4210_init_tsp(void) {
 	msleep(100);
 }
 
+static struct s3c2410_platform_i2c i2c3_data __initdata = {
+	.flags		= 0,
+	.bus_num	= 3,
+	.slave_addr	= 0x10,
+	.frequency	= 400 * 1000,
+	.sda_delay	= 100,
+};
+
 
 /******
  * MAX17042 
@@ -383,6 +391,8 @@ static struct platform_device wlan_fixed_voltage = {
 	},
 };
 
+
+
 /* I2C0 */
 
 
@@ -421,22 +431,25 @@ static struct i2c_board_info i2c_devs7[] __initdata = {
  * HSMMC def
  */
 static struct s3c_sdhci_platdata smdk4210_hsmmc0_pdata __initdata = {
-        .cd_type                = S3C_SDHCI_CD_PERMANENT,
-        .clk_type               = S3C_SDHCI_CLK_DIV_EXTERNAL,
-#ifdef CONFIG_EXYNOS4_SDHCI_CH0_8BIT
-        .max_width              = 8,
-        .host_caps              = MMC_CAP_8_BIT_DATA,
-#endif
+	.max_width		= 8,
+	.host_caps		= (MMC_CAP_8_BIT_DATA | MMC_CAP_4_BIT_DATA |
+				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED |
+				MMC_CAP_DISABLE | MMC_CAP_ERASE),
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
+	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.cfg_gpio = exynos4_setup_sdhci0_cfg_gpio,
 };
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc2_pdata __initdata = {
-       .cd_type                = S3C_SDHCI_CD_GPIO,
-       .ext_cd_gpio_invert		= true,
-       .ext_cd_gpio				= EXYNOS4_GPX3(4),
-#ifdef CONFIG_EXYNOS4_SDHCI_CH2_8BIT
-        .max_width              = 8,
-        .host_caps              = MMC_CAP_8_BIT_DATA,
-#endif
+	.cd_type		= S3C_SDHCI_CD_GPIO,
+	.clk_type		= S3C_SDHCI_CLK_DIV_EXTERNAL,
+	.ext_cd_gpio	= GPIO_HSMMC2_CD,
+	.ext_cd_gpio_invert = 1,
+	.host_caps = MMC_CAP_4_BIT_DATA |
+				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED |
+				MMC_CAP_DISABLE,
+	.max_width		= 4,
+	.cfg_gpio = exynos4_setup_sdhci2_cfg_gpio,
 };
 
 static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
@@ -446,23 +459,8 @@ static struct s3c_sdhci_platdata smdk4210_hsmmc3_pdata __initdata = {
 	.host_caps		= MMC_CAP_4_BIT_DATA |
 				MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED,
 	.cfg_gpio = exynos4_setup_sdhci3_cfg_gpio,
-
 };
 
-static struct s3c_mshci_platdata smdk4210_mshc_pdata __initdata = {
-	.cd_type					= S3C_MSHCI_CD_PERMANENT,
-	.max_width					= 8,
-	.host_caps					= MMC_CAP_8_BIT_DATA | MMC_CAP_1_8V_DDR,
-};
-
-
-static struct s3c2410_platform_i2c i2c3_data __initdata = {
-	.flags		= 0,
-	.bus_num	= 3,
-	.slave_addr	= 0x10,
-	.frequency	= 400 * 1000,
-	.sda_delay	= 100,
-};
 
 
 
@@ -584,7 +582,7 @@ static struct platform_device *smdk4210_devices[] __initdata = {
 	&s3c_device_hsmmc0,
 	&s3c_device_hsmmc2,
 	&s3c_device_hsmmc3,
-	&s3c_device_mshci,
+	//&s3c_device_mshci,
 	&s3c_device_rtc,
 	&s3c_device_timer[1],
 	&s3c_device_wdt,
@@ -725,11 +723,11 @@ static void __init smdk4210_machine_init(void)
 	
 	s3cfb_set_platdata(NULL);
 	s3c_device_fb.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
-	
+
+	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);	
 	s3c_sdhci2_set_platdata(&smdk4210_hsmmc2_pdata);
-	s3c_sdhci0_set_platdata(&smdk4210_hsmmc0_pdata);
 	s3c_sdhci3_set_platdata(&smdk4210_hsmmc3_pdata);
-	s3c_mshci_set_platdata(&smdk4210_mshc_pdata);
+	//s3c_mshci_set_platdata(&smdk4210_mshc_pdata);
 
 	
 	s5p_fimg2d_set_platdata(&fimg2d_data);
@@ -757,6 +755,7 @@ static void __init smdk4210_machine_init(void)
 
 	samsung_bl_set(&smdk4210_bl_gpio_info, &smdk4210_bl_data);
 	/*smdk4210_bt_setup();*/
+	
 }
 
 #if defined(CONFIG_S5P_MEM_CMA)
